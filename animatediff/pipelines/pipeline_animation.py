@@ -54,7 +54,7 @@ class AnimationPipeline(DiffusionPipeline):
             LMSDiscreteScheduler,
             EulerDiscreteScheduler,
             EulerAncestralDiscreteScheduler,
-            DPMSolvederMultistepScheduler,
+            # DPMSolvederMultistepScheduler,
         ],
         controlnet: Union[SparseControlNetModel, None] = None,
     ):
