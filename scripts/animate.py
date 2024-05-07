@@ -1,6 +1,6 @@
 import argparse
-import datetime
 import inspect
+import datetime
 import os
 from omegaconf import OmegaConf
 import torch
@@ -9,6 +9,11 @@ import diffusers
 from diffusers import AutoencoderKL, DDIMScheduler
 from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
+# how to find animatediff ?
+# add present dir on sys
+import os, sys
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
+sys.append(parent_dir)
 from animatediff.models.unet import UNet3DConditionModel
 from animatediff.models.sparse_controlnet import SparseControlNetModel
 from animatediff.pipelines.pipeline_animation import AnimationPipeline
@@ -35,6 +40,7 @@ def main(args):
     os.makedirs(savedir, exist_ok=True)
 
     print(f"\n step 3. check config")
+    # OmegaConf.load (read config yaml)
     config = OmegaConf.load(args.config)
     samples = []
 
@@ -49,13 +55,23 @@ def main(args):
     for model_idx, model_config in enumerate(config):
         # model config = v3-1-T2V.yaml
         print(f' (5.{model_idx}) model inference')
-        model_config.W = model_config.get("W", args.W) # 384
-        model_config.H = model_config.get("H", args.H) # 256
-        model_config.L = model_config.get("L", args.L) #
+        # if there is no config, use argument
+        model_config.W = model_config.get("W", args.W)
+        model_config.H = model_config.get("H", args.H)
+        model_config.L = model_config.get("L", args.L) # 16
+        # ------------------------------------------------------------------------------------------------------------------------
+        # [2] inference config
+        # anomal yaml file (configs/inference/inference-v3.yaml)
+        # to read yaml file, OmegaConf is necessary
         inference_config = OmegaConf.load(model_config.get("inference_config", args.inference_config))
-        unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path, subfolder="unet",
-                                                       unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
+        unet = UNet3DConditionModel.from_pretrained_2d(
+            args.pretrained_model_path,
+            subfolder="unet",
+            unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)
+        ).to(device)
         print(f'original unet attention heads = {unet.config.num_attention_heads}')
+
+        # ------------------------------------------------------------------------------------------------------------------------
         # [2] controlnet
         controlnet = controlnet_images = None # scribble
         if model_config.get("controlnet_path", "") != "":
@@ -80,9 +96,10 @@ def main(args):
                 print(f'control image = {controlnet_images}')
             assert len(image_paths) <= model_config.L
             # L mean the frame
-            # here, L =
+            # here, L = if there is no L ..
             image_transforms = transforms.Compose([transforms.RandomResizedCrop((model_config.H, model_config.W), (1.0, 1.0),
-                                                                                ratio=(model_config.W/model_config.H, model_config.W/model_config.H)),
+                                                                                ratio=(model_config.W/model_config.H,
+                                                                                       model_config.W/model_config.H)),
                                                    transforms.ToTensor(),])
             if model_config.get("normalize_condition_images", False):
                 def image_norm(image):
@@ -91,9 +108,10 @@ def main(args):
                     image /= image.max()
                     return image
             else:
-                image_norm = lambda x: x
+                image_norm = lambda x: x # no normalizing mappint
             controlnet_images = [image_norm(image_transforms(Image.open(path).convert("RGB"))) for path in image_paths]
-            os.makedirs(os.path.join(savedir, "control_images"), exist_ok=True)
+            os.makedirs(os.path.join(savedir,
+                                     "control_images"), exist_ok=True)
             for i, image in enumerate(controlnet_images):
                 Image.fromarray((255. * (image.numpy().transpose(1,2,0))).astype(np.uint8)).save(f"{savedir}/control_images/{i}.png")
 
@@ -112,6 +130,7 @@ def main(args):
         if is_xformers_available() and (not args.without_xformers):
             unet.enable_xformers_memory_efficient_attention()
             if controlnet is not None: controlnet.enable_xformers_memory_efficient_attention()
+
         # [3] pure pipeline
         pipeline = AnimationPipeline(vae=vae,
                                      text_encoder=text_encoder,
@@ -121,16 +140,16 @@ def main(args):
                                      scheduler=DDIMScheduler(**OmegaConf.to_container(inference_config.noise_scheduler_kwargs)),) #.to("cuda")
         # [4] pipeline with motion module / lora / domain adapter
         pipeline = load_weights(pipeline,
-                                # motion module
-                                motion_module_path         = model_config.get("motion_module", ""),
+                                motion_module_path         = model_config.get("motion_module", ""),                 # motion module
                                 motion_module_lora_configs = model_config.get("motion_module_lora_configs", []),
-                                # domain adapter
-                                adapter_lora_path          = model_config.get("adapter_lora_path", ""),
+                                adapter_lora_path          = model_config.get("adapter_lora_path", ""),             # domain adapter
                                 adapter_lora_scale         = model_config.get("adapter_lora_scale", 1.0),
                                 # image layers
                                 dreambooth_model_path      = model_config.get("dreambooth_path", ""),
+
                                 lora_model_path            = model_config.get("lora_model_path", ""),
                                 lora_alpha                 = model_config.get("lora_alpha", 0.8),).to(device)
+
         # [5] inference
         prompts      = model_config.prompt
         n_prompts    = list(model_config.n_prompt) * len(prompts) if len(model_config.n_prompt) == 1 else model_config.n_prompt
