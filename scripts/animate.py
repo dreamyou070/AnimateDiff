@@ -69,14 +69,16 @@ def main(args):
             args.pretrained_model_path,
             subfolder="unet",
             unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
-        print(f'original unet attention heads = {unet.config.num_attention_heads}')
+        # print(f'original unet attention heads = {unet.config.num_attention_heads}')
 
         # ------------------------------------------------------------------------------------------------------------------------
         # [2] controlnet
         controlnet = controlnet_images = None # scribble
         if model_config.get("controlnet_path", "") != "":
+            print(f' controlnet start !')
             assert model_config.get("controlnet_images", "") != ""
             assert model_config.get("controlnet_config", "") != ""
+            # make new attribute
             unet.config.num_attention_heads = 8
             unet.config.projection_class_embeddings_input_dim = None
             controlnet_config = OmegaConf.load(model_config.controlnet_config)
