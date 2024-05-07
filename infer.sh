@@ -2,6 +2,7 @@
 # config = about inference things
 # inference-config = about unet structure
 
-python scripts/animate.py --config configs/prompts/v3/v3-1-T2V.yaml \
+python scripts/animate.py \
  --pretrained-model-path ../../pretrained_stable_diffusion/stable-diffusion-v1-5 \
+ --config configs/prompts/v3/v3-1-T2V.yaml \
  --inference-config configs/inference/inference-v1.yaml

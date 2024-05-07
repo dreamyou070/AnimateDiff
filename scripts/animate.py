@@ -41,26 +41,23 @@ def main(args):
     print(f"\n step 4. loading model")
     device = args.device
     tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_path, subfolder="tokenizer")
-    text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_path,
-                                                 subfolder="text_encoder").to(device)
-    vae = AutoencoderKL.from_pretrained(args.pretrained_model_path,
-                                        subfolder="vae").to(device)
+    text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_path, subfolder="text_encoder").to(device)
+    vae = AutoencoderKL.from_pretrained(args.pretrained_model_path, subfolder="vae").to(device)
 
     print(f"\n step 5. inference")
-
     sample_idx = 0
     for model_idx, model_config in enumerate(config):
+        # model config = v3-1-T2V.yaml
         print(f' (5.{model_idx}) model inference')
         model_config.W = model_config.get("W", args.W) # 384
         model_config.H = model_config.get("H", args.H) # 256
         model_config.L = model_config.get("L", args.L) #
         inference_config = OmegaConf.load(model_config.get("inference_config", args.inference_config))
-        unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
-                                                       subfolder="unet",
+        unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path, subfolder="unet",
                                                        unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
-        # [2] controlnet
-        controlnet = controlnet_images = None
         print(f'original unet attention heads = {unet.config.num_attention_heads}')
+        # [2] controlnet
+        controlnet = controlnet_images = None # scribble
         if model_config.get("controlnet_path", "") != "":
             assert model_config.get("controlnet_images", "") != ""
             assert model_config.get("controlnet_config", "") != ""
@@ -75,12 +72,15 @@ def main(args):
             controlnet_state_dict.pop("animatediff_config", "")
             controlnet.load_state_dict(controlnet_state_dict)
             controlnet.to(device)
-            # ------------------------------------------------------------------------------------------------------------------------------------------
-            # control net image
-            image_paths = model_config.controlnet_images
-            if isinstance(image_paths, str): image_paths = [image_paths]
-            for path in image_paths: print(path)
+            # controlnet images
+            image_paths = model_config.controlnet_images # more than two ??
+            if isinstance(image_paths, str) :
+                image_paths = [image_paths]
+            for path in image_paths:
+                print(f'control image = {controlnet_images}')
             assert len(image_paths) <= model_config.L
+            # L mean the frame
+            # here, L =
             image_transforms = transforms.Compose([transforms.RandomResizedCrop((model_config.H, model_config.W), (1.0, 1.0),
                                                                                 ratio=(model_config.W/model_config.H, model_config.W/model_config.H)),
                                                    transforms.ToTensor(),])

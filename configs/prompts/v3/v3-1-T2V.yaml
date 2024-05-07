@@ -17,7 +17,8 @@
   guidance_scale: 8.5
   controlnet_image_indexs: [0]
   controlnet_images:
-    - "__assets__/demos/image/RealisticVision_firework.png" # controlnet stype
+    - "__assets__/demos/image/RealisticVision_firework.png"
+    -
   prompt:
     - a girl, seeing front, smiling
     - a girl, seeing front, smiling
