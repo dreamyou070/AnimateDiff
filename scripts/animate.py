@@ -160,12 +160,10 @@ def main(args):
             print(f"save to {savedir}/sample/{prompt}.gif")
             
             sample_idx += 1
-        """
 
-    #samples = torch.concat(samples)
-    #save_videos_grid(samples, f"{savedir}/sample.gif", n_rows=4)
-
-    #OmegaConf.save(config, f"{savedir}/config.yaml")
+    samples = torch.concat(samples)
+    save_videos_grid(samples, f"{savedir}/sample.gif", n_rows=4)
+    OmegaConf.save(config, f"{savedir}/config.yaml")
 
 
 if __name__ == "__main__":
@@ -178,6 +176,5 @@ if __name__ == "__main__":
     parser.add_argument("--H", type=int, default=512)
     parser.add_argument("--without-xformers", action="store_true")
     parser.add_argument('--device', type = str, default= 'cuda')
-
     args = parser.parse_args()
     main(args)
