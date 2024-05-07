@@ -40,40 +40,32 @@ def main(args):
 
     print(f"\n step 4. loading model")
     device = args.device
-
+    tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_path, subfolder="tokenizer")
+    text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_path,
+                                                 subfolder="text_encoder").to(device)
+    vae = AutoencoderKL.from_pretrained(args.pretrained_model_path,
+                                        subfolder="vae").to(device)
 
     print(f"\n step 5. inference")
+
     sample_idx = 0
     for model_idx, model_config in enumerate(config):
+        print(f' (5.{model_idx}) model inference')
         model_config.W = model_config.get("W", args.W) # 384
         model_config.H = model_config.get("H", args.H) # 256
         model_config.L = model_config.get("L", args.L) #
         inference_config = OmegaConf.load(model_config.get("inference_config", args.inference_config))
-
-        # --------------------------------------------------------------------------------------------------------
-        # when loading 3D U-Net model, we need to set the number of attention heads to 8
         unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
                                                        subfolder="unet",
                                                        unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
-        tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_path, subfolder="tokenizer")
-        text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_path,
-                                                     subfolder="text_encoder").to(device)
-        vae = AutoencoderKL.from_pretrained(args.pretrained_model_path,
-                                            subfolder="vae").to(device)
-
-        print(f' (5.1) load controlnet model')
+        # [2] controlnet
         controlnet = controlnet_images = None
-        # if use controlnet, unet attention heads = 8
-        # before, attention heads =
         print(f'original unet attention heads = {unet.config.num_attention_heads}')
         if model_config.get("controlnet_path", "") != "":
             assert model_config.get("controlnet_images", "") != ""
             assert model_config.get("controlnet_config", "") != ""
             unet.config.num_attention_heads = 8
             unet.config.projection_class_embeddings_input_dim = None
-
-            # ------------------------------------------------------------------------------------------------------------------------------------------
-            # load controlnet model
             controlnet_config = OmegaConf.load(model_config.controlnet_config)
             controlnet = SparseControlNetModel.from_unet(unet,
                                                          controlnet_additional_kwargs=controlnet_config.get("controlnet_additional_kwargs", {}))
@@ -120,14 +112,14 @@ def main(args):
         if is_xformers_available() and (not args.without_xformers):
             unet.enable_xformers_memory_efficient_attention()
             if controlnet is not None: controlnet.enable_xformers_memory_efficient_attention()
+        # [3] pure pipeline
         pipeline = AnimationPipeline(vae=vae,
                                      text_encoder=text_encoder,
                                      tokenizer=tokenizer,
                                      unet=unet,
                                      controlnet=controlnet,
                                      scheduler=DDIMScheduler(**OmegaConf.to_container(inference_config.noise_scheduler_kwargs)),) #.to("cuda")
-        # --------------------------------------------------------------------------------------------------------------
-        # load weights ... ? (make pipeline)
+        # [4] pipeline with motion module / lora / domain adapter
         pipeline = load_weights(pipeline,
                                 # motion module
                                 motion_module_path         = model_config.get("motion_module", ""),
@@ -139,14 +131,12 @@ def main(args):
                                 dreambooth_model_path      = model_config.get("dreambooth_path", ""),
                                 lora_model_path            = model_config.get("lora_model_path", ""),
                                 lora_alpha                 = model_config.get("lora_alpha", 0.8),).to(device)
-
-        """
+        # [5] inference
         prompts      = model_config.prompt
         n_prompts    = list(model_config.n_prompt) * len(prompts) if len(model_config.n_prompt) == 1 else model_config.n_prompt
         random_seeds = model_config.get("seed", [-1])
         random_seeds = [random_seeds] if isinstance(random_seeds, int) else list(random_seeds)
         random_seeds = random_seeds * len(prompts) if len(random_seeds) == 1 else random_seeds
-        
         config[model_idx].random_seed = []
         for prompt_idx, (prompt, n_prompt, random_seed) in enumerate(zip(prompts, n_prompts, random_seeds)):
             
@@ -154,20 +144,15 @@ def main(args):
             if random_seed != -1: torch.manual_seed(random_seed)
             else: torch.seed()
             config[model_idx].random_seed.append(torch.initial_seed())
-            
-            print(f"current seed: {torch.initial_seed()}")
-            print(f"sampling {prompt} ...")
-            sample = pipeline(
-                prompt,
-                negative_prompt     = n_prompt,
-                num_inference_steps = model_config.steps,
-                guidance_scale      = model_config.guidance_scale,
-                width               = model_config.W,
-                height              = model_config.H,
-                video_length        = model_config.L,
-
-                controlnet_images = controlnet_images,
-                controlnet_image_index = model_config.get("controlnet_image_indexs", [0]),).videos
+            sample = pipeline(prompt,
+                              negative_prompt     = n_prompt,
+                              num_inference_steps = model_config.steps,
+                              guidance_scale      = model_config.guidance_scale,
+                              width               = model_config.W,
+                              height              = model_config.H,
+                              video_length        = model_config.L,
+                              controlnet_images = controlnet_images, # controlnet here
+                              controlnet_image_index = model_config.get("controlnet_image_indexs", [0]),).videos
             samples.append(sample)
 
             prompt = "-".join((prompt.replace("/", "").split(" ")[:10]))

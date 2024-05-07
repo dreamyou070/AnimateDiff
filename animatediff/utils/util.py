@@ -1,3 +1,4 @@
+
 import os
 import imageio
 import numpy as np
@@ -104,7 +105,8 @@ def load_weights(
     lora_model_path            = "",
     lora_alpha                 = 0.8,
 ):
-    # motion module
+
+    # [1] unet with motion module
     unet_state_dict = {}
     if motion_module_path != "":
         print(f"load motion module from {motion_module_path}")

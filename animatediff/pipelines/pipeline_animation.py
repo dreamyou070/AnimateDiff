@@ -54,7 +54,7 @@ class AnimationPipeline(DiffusionPipeline):
             LMSDiscreteScheduler,
             EulerDiscreteScheduler,
             EulerAncestralDiscreteScheduler,
-            DPMSolverMultistepScheduler,
+            DPMSolvederMultistepScheduler,
         ],
         controlnet: Union[SparseControlNetModel, None] = None,
     ):
@@ -362,22 +362,21 @@ class AnimationPipeline(DiffusionPipeline):
         # corresponds to doing no classifier free guidance.
         do_classifier_free_guidance = guidance_scale > 1.0
 
-        # Encode input prompt
+        # [1] Encode Input Prompt (maybe length limit ???)
         prompt = prompt if isinstance(prompt, list) else [prompt] * batch_size
         if negative_prompt is not None:
             negative_prompt = negative_prompt if isinstance(negative_prompt, list) else [negative_prompt] * batch_size 
-        text_embeddings = self._encode_prompt(
-            prompt, device, num_videos_per_prompt, do_classifier_free_guidance, negative_prompt
-        )
+        text_embeddings = self._encode_prompt(prompt,
+                                              device, num_videos_per_prompt,
+                                              do_classifier_free_guidance, negative_prompt)
 
-        # Prepare timesteps
+        # [2] Prepare timesteps
         self.scheduler.set_timesteps(num_inference_steps, device=device)
         timesteps = self.scheduler.timesteps
 
-        # Prepare latent variables
+        # [3] Prepare latent variables
         num_channels_latents = self.unet.in_channels
-        latents = self.prepare_latents(
-            batch_size * num_videos_per_prompt,
+        latents = self.prepare_latents(batch_size * num_videos_per_prompt,
             num_channels_latents,
             video_length,
             height,
@@ -385,30 +384,32 @@ class AnimationPipeline(DiffusionPipeline):
             text_embeddings.dtype,
             device,
             generator,
-            latents,
-        )
+            latents,)
         latents_dtype = latents.dtype
 
-        # Prepare extra step kwargs.
+        # [4] Prepare extra step kwargs.
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-        # Denoising loop
+        # [5] Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
-                # expand the latents if we are doing classifier free guidance
+                # [1] latent input if we are doing classifier free guidance
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
                 down_block_additional_residuals = mid_block_additional_residual = None
+
                 if (getattr(self, "controlnet", None) != None) and (controlnet_images != None):
+
                     assert controlnet_images.dim() == 5
 
+                    # [3] controlnet noisy latents (original image and controlnet image move together)
                     controlnet_noisy_latents = latent_model_input
                     controlnet_prompt_embeds = text_embeddings
-
                     controlnet_images = controlnet_images.to(latents.device)
 
+                    # [4]
                     controlnet_cond_shape    = list(controlnet_images.shape)
                     controlnet_cond_shape[2] = video_length
                     controlnet_cond = torch.zeros(controlnet_cond_shape).to(latents.device)
@@ -420,23 +421,19 @@ class AnimationPipeline(DiffusionPipeline):
                     assert controlnet_images.shape[2] >= len(controlnet_image_index)
                     controlnet_cond[:,:,controlnet_image_index] = controlnet_images[:,:,:len(controlnet_image_index)]
                     controlnet_conditioning_mask[:,:,controlnet_image_index] = 1
-
+                    # [5] make controlnet condition
                     down_block_additional_residuals, mid_block_additional_residual = self.controlnet(
                         controlnet_noisy_latents, t,
                         encoder_hidden_states=controlnet_prompt_embeds,
                         controlnet_cond=controlnet_cond,
                         conditioning_mask=controlnet_conditioning_mask,
                         conditioning_scale=controlnet_conditioning_scale,
-                        guess_mode=False, return_dict=False,
-                    )
-
-                # predict the noise residual
-                noise_pred = self.unet(
-                    latent_model_input, t, 
+                        guess_mode=False, return_dict=False,)
+                # [6] predict the noise residual
+                noise_pred = self.unet(latent_model_input, t,
                     encoder_hidden_states=text_embeddings,
                     down_block_additional_residuals = down_block_additional_residuals,
-                    mid_block_additional_residual   = mid_block_additional_residual,
-                ).sample.to(dtype=latents_dtype)
+                    mid_block_additional_residual   = mid_block_additional_residual,).sample.to(dtype=latents_dtype)
 
                 # perform guidance
                 if do_classifier_free_guidance:
