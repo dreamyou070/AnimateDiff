@@ -236,13 +236,9 @@ class UNetMidBlock3DCrossAttn(nn.Module):
                     unet_use_temporal_attention=unet_use_temporal_attention,
                 )
             )
-            motion_modules.append(
-                get_motion_module(
-                    in_channels=in_channels,
-                    motion_module_type=motion_module_type, 
-                    motion_module_kwargs=motion_module_kwargs,
-                ) if use_motion_module else None
-            )
+            motion_modules.append(get_motion_module(in_channels=in_channels,
+                                                    motion_module_type=motion_module_type,
+                                                    motion_module_kwargs=motion_module_kwargs,) if use_motion_module else None)
             resnets.append(
                 ResnetBlock3D(
                     in_channels=in_channels,

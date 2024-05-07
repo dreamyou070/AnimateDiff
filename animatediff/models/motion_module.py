@@ -50,14 +50,14 @@ def get_motion_module(
 class VanillaTemporalModule(nn.Module):
     def __init__(self,
                  in_channels,
-        num_attention_heads                = 8,
-        num_transformer_block              = 2,
-        attention_block_types              =( "Temporal_Self", "Temporal_Self" ),
-        cross_frame_attention_mode         = None,
-        temporal_position_encoding         = False,
-        temporal_position_encoding_max_len = 24,
-        temporal_attention_dim_div         = 1,
-        zero_initialize                    = True,):
+                num_attention_heads                = 8,
+                num_transformer_block              = 2,
+                attention_block_types              =( "Temporal_Self", "Temporal_Self" ),
+                cross_frame_attention_mode         = None,
+                temporal_position_encoding         = False,
+                temporal_position_encoding_max_len = 24,
+                temporal_attention_dim_div         = 1,
+                zero_initialize                    = True,):
         super().__init__()
         
         self.temporal_transformer = TemporalTransformer3DModel(
@@ -103,9 +103,6 @@ class TemporalTransformer3DModel(nn.Module):
         temporal_position_encoding_max_len = 24,
     ):
         super().__init__()
-
-
-
         inner_dim = num_attention_heads * attention_head_dim
 
         self.norm = torch.nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True)
@@ -175,25 +172,18 @@ class TemporalTransformerBlock(nn.Module):
         norms = []
         
         for block_name in attention_block_types:
-            attention_blocks.append(
-                VersatileAttention(
-                    attention_mode=block_name.split("_")[0],
-                    cross_attention_dim=cross_attention_dim if block_name.endswith("_Cross") else None,
-                    
-                    query_dim=dim,
-                    heads=num_attention_heads,
-                    dim_head=attention_head_dim,
-                    dropout=dropout,
-                    bias=attention_bias,
-                    upcast_attention=upcast_attention,
-        
-                    cross_frame_attention_mode=cross_frame_attention_mode,
-                    temporal_position_encoding=temporal_position_encoding,
-                    temporal_position_encoding_max_len=temporal_position_encoding_max_len,
-                )
-            )
+            attention_blocks.append(VersatileAttention(attention_mode=block_name.split("_")[0],
+                                                       cross_attention_dim=cross_attention_dim if block_name.endswith("_Cross") else None,
+                                                        query_dim=dim,
+                                                        heads=num_attention_heads,
+                                                        dim_head=attention_head_dim,
+                                                        dropout=dropout,
+                                                        bias=attention_bias,
+                                                        upcast_attention=upcast_attention,
+                                                        cross_frame_attention_mode=cross_frame_attention_mode,
+                                                        temporal_position_encoding=temporal_position_encoding,
+                                                        temporal_position_encoding_max_len=temporal_position_encoding_max_len,))
             norms.append(nn.LayerNorm(dim))
-            
         self.attention_blocks = nn.ModuleList(attention_blocks)
         self.norms = nn.ModuleList(norms)
 
@@ -204,8 +194,7 @@ class TemporalTransformerBlock(nn.Module):
     def forward(self, hidden_states, encoder_hidden_states=None, attention_mask=None, video_length=None):
         for attention_block, norm in zip(self.attention_blocks, self.norms):
             norm_hidden_states = norm(hidden_states)
-            hidden_states = attention_block(
-                norm_hidden_states,
+            hidden_states = attention_block(norm_hidden_states,
                 encoder_hidden_states=encoder_hidden_states if attention_block.is_cross_attention else None,
                 video_length=video_length,
             ) + hidden_states

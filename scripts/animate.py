@@ -88,7 +88,6 @@ def main(args):
             controlnet_state_dict.pop("animatediff_config", "")
             controlnet.load_state_dict(controlnet_state_dict)
             controlnet.to(device)
-            # controlnet images
             image_paths = model_config.controlnet_images # more than two ??
             if isinstance(image_paths, str) :
                 image_paths = [image_paths]
