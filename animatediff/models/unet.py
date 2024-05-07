@@ -85,7 +85,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         unet_use_temporal_attention    = False,):
         super().__init__()
 
-        # [1] sample_size =
+        # [1] sample_size
         self.sample_size = sample_size # (H, W)
         time_embed_dim = block_out_channels[0] * 4
 

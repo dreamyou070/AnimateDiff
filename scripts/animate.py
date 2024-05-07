@@ -13,7 +13,7 @@ from transformers import CLIPTextModel, CLIPTokenizer
 # add present dir on sys
 import os, sys
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
-sys.append(parent_dir)
+sys.path.append(parent_dir)
 from animatediff.models.unet import UNet3DConditionModel
 from animatediff.models.sparse_controlnet import SparseControlNetModel
 from animatediff.pipelines.pipeline_animation import AnimationPipeline
