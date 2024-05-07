@@ -1,0 +1,1 @@
+python -m scripts.animate --config configs/prompts/v3/v3-1-T2V.yaml
