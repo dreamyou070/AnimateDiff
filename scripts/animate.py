@@ -29,7 +29,7 @@ def main(args):
     *_, func_args = inspect.getargvalues(inspect.currentframe())
     func_args = dict(func_args)
 
-    print(f"\n step 2. start of learning")
+    print(f"\n step 2. start of inference")
     time_str = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     savedir = os.path.join('samples', f'{Path(args.config).stem}-{time_str}')
     os.makedirs(savedir, exist_ok=True)
@@ -39,6 +39,7 @@ def main(args):
     samples = []
 
     print(f"\n step 4. loading model")
+    device = args.device
 
 
     print(f"\n step 5. inference")
@@ -51,33 +52,41 @@ def main(args):
 
         # --------------------------------------------------------------------------------------------------------
         # when loading 3D U-Net model, we need to set the number of attention heads to 8
-        unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path, subfolder="unet", unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs))#.cuda()
+        unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
+                                                       subfolder="unet",
+                                                       unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
         tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_path, subfolder="tokenizer")
-        text_encoder = CLIPTextModel.from_pretrained("runwayml/stable-diffusion-v1-5", subfolder="text_encoder")  # .cuda()
-        vae = AutoencoderKL.from_pretrained("runwayml/stable-diffusion-v1-5", subfolder="vae")  # .cuda()
+        text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_path,
+                                                     subfolder="text_encoder").to(device)
+        vae = AutoencoderKL.from_pretrained(args.pretrained_model_path,
+                                            subfolder="vae").to(device)
 
         print(f' (5.1) load controlnet model')
         controlnet = controlnet_images = None
+        # if use controlnet, unet attention heads = 8
+        # before, attention heads =
+        print(f'original unet attention heads = {unet.config.num_attention_heads}')
         if model_config.get("controlnet_path", "") != "":
             assert model_config.get("controlnet_images", "") != ""
             assert model_config.get("controlnet_config", "") != ""
             unet.config.num_attention_heads = 8
             unet.config.projection_class_embeddings_input_dim = None
+
             # ------------------------------------------------------------------------------------------------------------------------------------------
             # load controlnet model
             controlnet_config = OmegaConf.load(model_config.controlnet_config)
             controlnet = SparseControlNetModel.from_unet(unet,
                                                          controlnet_additional_kwargs=controlnet_config.get("controlnet_additional_kwargs", {}))
-
             print(f"loading controlnet checkpoint from {model_config.controlnet_path} ...")
             controlnet_state_dict = torch.load(model_config.controlnet_path, map_location="cpu")
             controlnet_state_dict = controlnet_state_dict["controlnet"] if "controlnet" in controlnet_state_dict else controlnet_state_dict
             controlnet_state_dict.pop("animatediff_config", "")
             controlnet.load_state_dict(controlnet_state_dict)
-            #controlnet.cuda()
+            controlnet.to(device)
+            # ------------------------------------------------------------------------------------------------------------------------------------------
+            # control net image
             image_paths = model_config.controlnet_images
             if isinstance(image_paths, str): image_paths = [image_paths]
-            print(f"controlnet image paths:")
             for path in image_paths: print(path)
             assert len(image_paths) <= model_config.L
             image_transforms = transforms.Compose([transforms.RandomResizedCrop((model_config.H, model_config.W), (1.0, 1.0),
@@ -91,40 +100,47 @@ def main(args):
                     return image
             else:
                 image_norm = lambda x: x
-                
             controlnet_images = [image_norm(image_transforms(Image.open(path).convert("RGB"))) for path in image_paths]
             os.makedirs(os.path.join(savedir, "control_images"), exist_ok=True)
             for i, image in enumerate(controlnet_images):
                 Image.fromarray((255. * (image.numpy().transpose(1,2,0))).astype(np.uint8)).save(f"{savedir}/control_images/{i}.png")
-            controlnet_images = torch.stack(controlnet_images).unsqueeze(0)#.cuda()
+
+            controlnet_images = torch.stack(controlnet_images).unsqueeze(0).to(device)
             controlnet_images = rearrange(controlnet_images, "b f c h w -> b c f h w")
+            # original range = batch, frame = 1, channel = 3, h, w
+            # rearranged = batch, channel, frame = 2, H, W
             if controlnet.use_simplified_condition_embedding:
                 num_controlnet_images = controlnet_images.shape[2]
                 controlnet_images = rearrange(controlnet_images, "b c f h w -> (b f) c h w")
                 controlnet_images = vae.encode(controlnet_images * 2. - 1.).latent_dist.sample() * 0.18215
                 controlnet_images = rearrange(controlnet_images, "(b f) c h w -> b c f h w", f=num_controlnet_images)
-        """
+                # vae prepared control image
+
         # set xformers
         if is_xformers_available() and (not args.without_xformers):
             unet.enable_xformers_memory_efficient_attention()
             if controlnet is not None: controlnet.enable_xformers_memory_efficient_attention()
-        """
-        pipeline = AnimationPipeline(vae=vae, text_encoder=text_encoder, tokenizer=tokenizer, unet=unet,
+        pipeline = AnimationPipeline(vae=vae,
+                                     text_encoder=text_encoder,
+                                     tokenizer=tokenizer,
+                                     unet=unet,
                                      controlnet=controlnet,
                                      scheduler=DDIMScheduler(**OmegaConf.to_container(inference_config.noise_scheduler_kwargs)),) #.to("cuda")
-        pipeline = load_weights(
-            pipeline,
-            # motion module
-            motion_module_path         = model_config.get("motion_module", ""),
-            motion_module_lora_configs = model_config.get("motion_module_lora_configs", []),
-            # domain adapter
-            adapter_lora_path          = model_config.get("adapter_lora_path", ""),
-            adapter_lora_scale         = model_config.get("adapter_lora_scale", 1.0),
-            # image layers
-            dreambooth_model_path      = model_config.get("dreambooth_path", ""),
-            lora_model_path            = model_config.get("lora_model_path", ""),
-            lora_alpha                 = model_config.get("lora_alpha", 0.8),
-        )#.to("cuda")
+        # --------------------------------------------------------------------------------------------------------------
+        # load weights ... ? (make pipeline)
+        pipeline = load_weights(pipeline,
+                                # motion module
+                                motion_module_path         = model_config.get("motion_module", ""),
+                                motion_module_lora_configs = model_config.get("motion_module_lora_configs", []),
+                                # domain adapter
+                                adapter_lora_path          = model_config.get("adapter_lora_path", ""),
+                                adapter_lora_scale         = model_config.get("adapter_lora_scale", 1.0),
+                                # image layers
+                                dreambooth_model_path      = model_config.get("dreambooth_path", ""),
+                                lora_model_path            = model_config.get("lora_model_path", ""),
+                                lora_alpha                 = model_config.get("lora_alpha", 0.8),).to(device)
+
+        """
         prompts      = model_config.prompt
         n_prompts    = list(model_config.n_prompt) * len(prompts) if len(model_config.n_prompt) == 1 else model_config.n_prompt
         random_seeds = model_config.get("seed", [-1])
@@ -159,6 +175,7 @@ def main(args):
             print(f"save to {savedir}/sample/{prompt}.gif")
             
             sample_idx += 1
+        """
 
     #samples = torch.concat(samples)
     #save_videos_grid(samples, f"{savedir}/sample.gif", n_rows=4)
@@ -175,6 +192,7 @@ if __name__ == "__main__":
     parser.add_argument("--W", type=int, default=512)
     parser.add_argument("--H", type=int, default=512)
     parser.add_argument("--without-xformers", action="store_true")
+    parser.add_argument('--device', type = str, default= 'cuda')
 
     args = parser.parse_args()
     main(args)

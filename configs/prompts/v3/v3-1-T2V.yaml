@@ -1,3 +1,5 @@
+# use Lora Model Once
+# spacectrl = scribble one
 # 1-animation
 - domain_lora_scale: 1.0
   adapter_lora_path: "pretrained/animatediff/domain_adopter/v3_sd15_adapter.ckpt"
@@ -6,6 +8,7 @@
   motion_module:    "pretrained/animatediff/motion_module/v3_sd15_mm.ckpt"
   controlnet_config: "configs/inference/sparsectrl/latent_condition.yaml"
   controlnet_path:   "pretrained/models/sparsectrl/v3_sd15_sparsectrl_rgb.ckpt"
+  lora_model_path: ""
   H: 256
   W: 384
   seed: [123,234]

@@ -1,9 +1,10 @@
 controlnet_additional_kwargs:
-  set_noisy_sample_input_to_zero:     true
-  use_simplified_condition_embedding: true
-  conditioning_channels:              4
 
-  use_motion_module:         true
+  set_noisy_sample_input_to_zero:     true
+  use_simplified_condition_embedding: true # most simplified
+  conditioning_channels:              4    # conditioning channel = 4
+
+  use_motion_module:         true          # controlnet have also motion module
   motion_module_resolutions: [1,2,4,8]
   motion_module_mid_block:   false
   motion_module_type:        "Vanilla"

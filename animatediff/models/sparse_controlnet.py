@@ -1,18 +1,22 @@
-# Copyright 2023 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+# # Copyright 2023 The HuggingFace Team. All rights reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# #     http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing, software
+# # distributed under the License is distributed on an "AS IS" BASIS,
+# # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# # See the License for the specific language governing permissions and
+# #
 #  Changes were made to this source code by Yuwei Guo.
+
+
+# sparse controlnet model config = configs/inference/sparsectrl/latent_condition.yaml
+
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -60,14 +64,16 @@ class SparseControlNetConditioningEmbedding(nn.Module):
         self.blocks = nn.ModuleList([])
 
         for i in range(len(block_out_channels) - 1):
+
             channel_in = block_out_channels[i]
             channel_out = block_out_channels[i + 1]
-            self.blocks.append(InflatedConv3d(channel_in, channel_in, kernel_size=3, padding=1))
+            self.blocks.append(InflatedConv3d(channel_in, channel_in,
+                                              kernel_size=3, padding=1))
             self.blocks.append(InflatedConv3d(channel_in, channel_out, kernel_size=3, padding=1, stride=2))
 
-        self.conv_out = zero_module(
-            InflatedConv3d(block_out_channels[-1], conditioning_embedding_channels, kernel_size=3, padding=1)
-        )
+        self.conv_out = zero_module(InflatedConv3d(block_out_channels[-1],
+                                                   conditioning_embedding_channels,
+                                                   kernel_size=3, padding=1))
 
     def forward(self, conditioning):
         embedding = self.conv_in(conditioning)
@@ -85,9 +91,11 @@ class SparseControlNetConditioningEmbedding(nn.Module):
 class SparseControlNetModel(ModelMixin, ConfigMixin):
     _supports_gradient_checkpointing = True
 
+    # what is different from original controlnet model?
+
+
     @register_to_config
-    def __init__(
-        self,
+    def __init__(self,
         in_channels: int = 4,
         conditioning_channels: int = 3,
         flip_sin_to_cos: bool = True,
@@ -119,12 +127,11 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
         conditioning_embedding_out_channels: Optional[Tuple[int]] = (16, 32, 96, 256),
         global_pool_conditions: bool = False,
 
-        use_motion_module         = True,
+        use_motion_module         = True,            # True
         motion_module_resolutions = ( 1,2,4,8 ),
-        motion_module_mid_block   = False,
-        motion_module_type        = "Vanilla",
-        motion_module_kwargs      = {
-            "num_attention_heads": 8,
+        motion_module_mid_block   = False,           # False
+        motion_module_type        = "Vanilla",       # Vanilla
+        motion_module_kwargs      = {"num_attention_heads": 8,
             "num_transformer_block": 1,
             "attention_block_types": ["Temporal_Self"],
             "temporal_position_encoding": True,
@@ -143,7 +150,9 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
         # If `num_attention_heads` is not defined (which is the case for most models)
         # it will default to `attention_head_dim`. This looks weird upon first reading it and it is.
         # The reason for this behavior is to correct for incorrectly named variables that were introduced
-        # when this library was created. The incorrect naming was only discovered much later in https://github.com/huggingface/diffusers/issues/2011#issuecomment-1547958131
+        # when this library was created.
+        # The incorrect naming was only discovered much later in
+        # https://github.com/huggingface/diffusers/issues/2011#issuecomment-1547958131
         # Changing `attention_head_dim` to `num_attention_heads` for 40,000+ configurations is too backwards breaking
         # which is why we correct for the naming here.
         num_attention_heads = num_attention_heads or attention_head_dim
@@ -170,8 +179,7 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
         conv_in_kernel = 3
         conv_in_padding = (conv_in_kernel - 1) // 2
         self.conv_in = InflatedConv3d(
-            in_channels, block_out_channels[0], kernel_size=conv_in_kernel, padding=conv_in_padding
-        )
+            in_channels, block_out_channels[0], kernel_size=conv_in_kernel, padding=conv_in_padding)
 
         if concate_conditioning_mask:
             conditioning_channels = conditioning_channels + 1
@@ -180,14 +188,14 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
         # control net conditioning embedding
         if use_simplified_condition_embedding:
             self.controlnet_cond_embedding = zero_module(
-                InflatedConv3d(conditioning_channels, block_out_channels[0], kernel_size=conv_in_kernel, padding=conv_in_padding)
+                InflatedConv3d(conditioning_channels, block_out_channels[0],
+                               kernel_size=conv_in_kernel, padding=conv_in_padding)
             )
         else:
             self.controlnet_cond_embedding = SparseControlNetConditioningEmbedding(
                 conditioning_embedding_channels=block_out_channels[0],
                 block_out_channels=conditioning_embedding_out_channels,
-                conditioning_channels=conditioning_channels,
-            )
+                conditioning_channels=conditioning_channels,)
         self.use_simplified_condition_embedding = use_simplified_condition_embedding
 
         # time
@@ -195,12 +203,8 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
 
         self.time_proj = Timesteps(block_out_channels[0], flip_sin_to_cos, freq_shift)
         timestep_input_dim = block_out_channels[0]
-
-        self.time_embedding = TimestepEmbedding(
-            timestep_input_dim,
-            time_embed_dim,
-            act_fn=act_fn,
-        )
+        self.time_embedding = TimestepEmbedding(timestep_input_dim,
+            time_embed_dim, act_fn=act_fn,)
 
         # class embedding
         if class_embed_type is None and num_class_embeds is not None:
@@ -225,32 +229,27 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
         else:
             self.class_embedding = None
 
-
+        # ------------------------------------------------------------------------------------------------------------
+        # [1] down blocks
         self.down_blocks = nn.ModuleList([])
         self.controlnet_down_blocks = nn.ModuleList([])
-
         if isinstance(only_cross_attention, bool):
             only_cross_attention = [only_cross_attention] * len(down_block_types)
-
         if isinstance(attention_head_dim, int):
             attention_head_dim = (attention_head_dim,) * len(down_block_types)
-
         if isinstance(num_attention_heads, int):
             num_attention_heads = (num_attention_heads,) * len(down_block_types)
-
         # down
         output_channel = block_out_channels[0]
-
         controlnet_block = InflatedConv3d(output_channel, output_channel, kernel_size=1)
         controlnet_block = zero_module(controlnet_block)
         self.controlnet_down_blocks.append(controlnet_block)
-
         for i, down_block_type in enumerate(down_block_types):
             res = 2 ** i
+            # 1,2,4,8 (every block have motion module)
             input_channel = output_channel
             output_channel = block_out_channels[i]
             is_final_block = i == len(block_out_channels) - 1
-
             down_block = get_down_block(
                 down_block_type,
                 num_layers=layers_per_block,
@@ -271,7 +270,7 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
 
                 use_inflated_groupnorm=True,
 
-                use_motion_module=use_motion_module and (res in motion_module_resolutions),
+                use_motion_module=use_motion_module and (res in motion_module_resolutions), # motion_module_resolution ??
                 motion_module_type=motion_module_type,
                 motion_module_kwargs=motion_module_kwargs,
             )
@@ -287,13 +286,12 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
                 controlnet_block = zero_module(controlnet_block)
                 self.controlnet_down_blocks.append(controlnet_block)
 
+        # ----------------------------------------------------------------------------------------------------------
         # mid
         mid_block_channel = block_out_channels[-1]
-
         controlnet_block = InflatedConv3d(mid_block_channel, mid_block_channel, kernel_size=1)
         controlnet_block = zero_module(controlnet_block)
         self.controlnet_mid_block = controlnet_block
-
         self.mid_block = UNetMidBlock3DCrossAttn(
             in_channels=mid_block_channel,
             temb_channels=time_embed_dim,
