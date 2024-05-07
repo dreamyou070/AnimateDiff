@@ -38,53 +38,50 @@ def get_down_block(
 ):
     down_block_type = down_block_type[7:] if down_block_type.startswith("UNetRes") else down_block_type
     if down_block_type == "DownBlock3D":
-        return DownBlock3D(
-            num_layers=num_layers,
-            in_channels=in_channels,
-            out_channels=out_channels,
-            temb_channels=temb_channels,
-            add_downsample=add_downsample,
-            resnet_eps=resnet_eps,
-            resnet_act_fn=resnet_act_fn,
-            resnet_groups=resnet_groups,
-            downsample_padding=downsample_padding,
-            resnet_time_scale_shift=resnet_time_scale_shift,
+        return DownBlock3D(num_layers=num_layers,
+                           in_channels=in_channels,
+                           out_channels=out_channels,
+                           temb_channels=temb_channels,
+                           add_downsample=add_downsample,
+                           resnet_eps=resnet_eps,
+                           resnet_act_fn=resnet_act_fn,
+                           resnet_groups=resnet_groups,
+                           downsample_padding=downsample_padding,
+                           resnet_time_scale_shift=resnet_time_scale_shift,
+                           use_inflated_groupnorm=use_inflated_groupnorm,
 
-            use_inflated_groupnorm=use_inflated_groupnorm,
+                           use_motion_module=use_motion_module, # motion module
+                           motion_module_type=motion_module_type,
+                           motion_module_kwargs=motion_module_kwargs,)
 
-            use_motion_module=use_motion_module,
-            motion_module_type=motion_module_type,
-            motion_module_kwargs=motion_module_kwargs,
-        )
     elif down_block_type == "CrossAttnDownBlock3D":
         if cross_attention_dim is None:
             raise ValueError("cross_attention_dim must be specified for CrossAttnDownBlock3D")
-        return CrossAttnDownBlock3D(
-            num_layers=num_layers,
-            in_channels=in_channels,
-            out_channels=out_channels,
-            temb_channels=temb_channels,
-            add_downsample=add_downsample,
-            resnet_eps=resnet_eps,
-            resnet_act_fn=resnet_act_fn,
-            resnet_groups=resnet_groups,
-            downsample_padding=downsample_padding,
-            cross_attention_dim=cross_attention_dim,
-            attn_num_head_channels=attn_num_head_channels,
-            dual_cross_attention=dual_cross_attention,
-            use_linear_projection=use_linear_projection,
-            only_cross_attention=only_cross_attention,
-            upcast_attention=upcast_attention,
-            resnet_time_scale_shift=resnet_time_scale_shift,
+        return CrossAttnDownBlock3D(num_layers=num_layers,
+                                    in_channels=in_channels,
+                                    out_channels=out_channels,
+                                    temb_channels=temb_channels,
+                                    add_downsample=add_downsample,
+                                    resnet_eps=resnet_eps,
+                                    resnet_act_fn=resnet_act_fn,
+                                    resnet_groups=resnet_groups,
+                                    downsample_padding=downsample_padding,
+                                    cross_attention_dim=cross_attention_dim,
+                                    attn_num_head_channels=attn_num_head_channels,
+                                    dual_cross_attention=dual_cross_attention,
+                                    use_linear_projection=use_linear_projection,
+                                    only_cross_attention=only_cross_attention,
+                                    upcast_attention=upcast_attention,
+                                    resnet_time_scale_shift=resnet_time_scale_shift,
 
-            unet_use_cross_frame_attention=unet_use_cross_frame_attention,
-            unet_use_temporal_attention=unet_use_temporal_attention,
-            use_inflated_groupnorm=use_inflated_groupnorm,
-            
-            use_motion_module=use_motion_module,
-            motion_module_type=motion_module_type,
-            motion_module_kwargs=motion_module_kwargs,
-        )
+                                    unet_use_cross_frame_attention=unet_use_cross_frame_attention,
+                                    unet_use_temporal_attention=unet_use_temporal_attention,
+                                    use_inflated_groupnorm=use_inflated_groupnorm,
+
+                                    use_motion_module=use_motion_module,
+                                    motion_module_type=motion_module_type,
+                                    motion_module_kwargs=motion_module_kwargs,)
+
     raise ValueError(f"{down_block_type} does not exist.")
 
 
@@ -417,36 +414,33 @@ class CrossAttnDownBlock3D(nn.Module):
 
 
 class DownBlock3D(nn.Module):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        temb_channels: int,
-        dropout: float = 0.0,
-        num_layers: int = 1,
-        resnet_eps: float = 1e-6,
-        resnet_time_scale_shift: str = "default",
-        resnet_act_fn: str = "swish",
-        resnet_groups: int = 32,
-        resnet_pre_norm: bool = True,
-        output_scale_factor=1.0,
-        add_downsample=True,
-        downsample_padding=1,
+    def __init__(self,
+                 in_channels: int,
+                out_channels: int,
+                temb_channels: int,
+                dropout: float = 0.0,
+                num_layers: int = 1,
+                resnet_eps: float = 1e-6,
+                resnet_time_scale_shift: str = "default",
+                resnet_act_fn: str = "swish",
+                resnet_groups: int = 32,
+                resnet_pre_norm: bool = True,
+                output_scale_factor=1.0,
+                add_downsample=True,
+                downsample_padding=1,
 
-        use_inflated_groupnorm=False,
-        
-        use_motion_module=None,
-        motion_module_type=None,
-        motion_module_kwargs=None,
-    ):
+                use_inflated_groupnorm=False,
+
+                use_motion_module=None,
+                motion_module_type=None,
+                motion_module_kwargs=None,):
         super().__init__()
         resnets = []
         motion_modules = []
 
         for i in range(num_layers):
             in_channels = in_channels if i == 0 else out_channels
-            resnets.append(
-                ResnetBlock3D(
+            resnets.append(ResnetBlock3D(
                     in_channels=in_channels,
                     out_channels=out_channels,
                     temb_channels=temb_channels,
@@ -458,20 +452,12 @@ class DownBlock3D(nn.Module):
                     output_scale_factor=output_scale_factor,
                     pre_norm=resnet_pre_norm,
 
-                    use_inflated_groupnorm=use_inflated_groupnorm,
-                )
-            )
-            motion_modules.append(
-                get_motion_module(
-                    in_channels=out_channels,
-                    motion_module_type=motion_module_type, 
-                    motion_module_kwargs=motion_module_kwargs,
-                ) if use_motion_module else None
-            )
-            
+                    use_inflated_groupnorm=use_inflated_groupnorm,))
+            motion_modules.append(get_motion_module(in_channels=out_channels,
+                                                    motion_module_type=motion_module_type,
+                                                    motion_module_kwargs=motion_module_kwargs,) if use_motion_module else None)
         self.resnets = nn.ModuleList(resnets)
         self.motion_modules = nn.ModuleList(motion_modules)
-
         if add_downsample:
             self.downsamplers = nn.ModuleList(
                 [
@@ -493,26 +479,19 @@ class DownBlock3D(nn.Module):
                 def create_custom_forward(module):
                     def custom_forward(*inputs):
                         return module(*inputs)
-
                     return custom_forward
-
                 hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(resnet), hidden_states, temb)
                 if motion_module is not None:
                     hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(motion_module), hidden_states.requires_grad_(), temb, encoder_hidden_states)
             else:
                 hidden_states = resnet(hidden_states, temb)
-
                 # add motion module
                 hidden_states = motion_module(hidden_states, temb, encoder_hidden_states=encoder_hidden_states) if motion_module is not None else hidden_states
-
             output_states += (hidden_states,)
-
         if self.downsamplers is not None:
             for downsampler in self.downsamplers:
                 hidden_states = downsampler(hidden_states)
-
             output_states += (hidden_states,)
-
         return hidden_states, output_states
 
 
@@ -560,9 +539,7 @@ class CrossAttnUpBlock3D(nn.Module):
             res_skip_channels = in_channels if (i == num_layers - 1) else out_channels
             resnet_in_channels = prev_output_channel if i == 0 else out_channels
 
-            resnets.append(
-                ResnetBlock3D(
-                    in_channels=resnet_in_channels + res_skip_channels,
+            resnets.append(ResnetBlock3D(in_channels=resnet_in_channels + res_skip_channels,
                     out_channels=out_channels,
                     temb_channels=temb_channels,
                     eps=resnet_eps,
@@ -638,13 +615,10 @@ class CrossAttnUpBlock3D(nn.Module):
                             return module(*inputs)
 
                     return custom_forward
-
                 hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(resnet), hidden_states, temb)
-                hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(attn, return_dict=False),
-                    hidden_states,
-                    encoder_hidden_states,
-                )[0]
+                hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(attn, return_dict=False),
+                                                                  hidden_states,
+                                                                  encoder_hidden_states,)[0]
                 if motion_module is not None:
                     hidden_states = torch.utils.checkpoint.checkpoint(create_custom_forward(motion_module), hidden_states.requires_grad_(), temb, encoder_hidden_states)
             
