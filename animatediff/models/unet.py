@@ -10,14 +10,14 @@ import pdb
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint
-
+import os, sys
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
+sys.path.append(parent_dir)
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.modeling_utils import ModelMixin
 from diffusers.utils import BaseOutput, logging
 from diffusers.models.embeddings import TimestepEmbedding, Timesteps
-from .unet_blocks import (CrossAttnDownBlock3D,DownBlock3D,get_down_block,
-                          CrossAttnUpBlock3D,UpBlock3D,get_up_block,
-                          UNetMidBlock3DCrossAttn,)
+from .unet_blocks import (CrossAttnDownBlock3D,DownBlock3D,get_down_block, CrossAttnUpBlock3D,UpBlock3D,get_up_block, UNetMidBlock3DCrossAttn,)
 from .resnet import InflatedConv3d, InflatedGroupNorm
 
 

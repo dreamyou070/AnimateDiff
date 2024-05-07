@@ -173,13 +173,11 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
                 f"Must provide the same number of `num_attention_heads` as `down_block_types`. `num_attention_heads`: {num_attention_heads}. `down_block_types`: {down_block_types}."
             )
 
-        # input
+        # [1] input
         self.set_noisy_sample_input_to_zero  = set_noisy_sample_input_to_zero
-
         conv_in_kernel = 3
         conv_in_padding = (conv_in_kernel - 1) // 2
-        self.conv_in = InflatedConv3d(
-            in_channels, block_out_channels[0], kernel_size=conv_in_kernel, padding=conv_in_padding)
+        self.conv_in = InflatedConv3d(in_channels, block_out_channels[0], kernel_size=conv_in_kernel, padding=conv_in_padding)
 
         if concate_conditioning_mask:
             conditioning_channels = conditioning_channels + 1
@@ -198,15 +196,14 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
                 conditioning_channels=conditioning_channels,)
         self.use_simplified_condition_embedding = use_simplified_condition_embedding
 
-        # time
+        # [2] time
         time_embed_dim = block_out_channels[0] * 4
-
         self.time_proj = Timesteps(block_out_channels[0], flip_sin_to_cos, freq_shift)
         timestep_input_dim = block_out_channels[0]
         self.time_embedding = TimestepEmbedding(timestep_input_dim,
             time_embed_dim, act_fn=act_fn,)
 
-        # class embedding
+        # [3] class embedding
         if class_embed_type is None and num_class_embeds is not None:
             self.class_embedding = nn.Embedding(num_class_embeds, time_embed_dim)
         elif class_embed_type == "timestep":
@@ -230,7 +227,7 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
             self.class_embedding = None
 
         # ------------------------------------------------------------------------------------------------------------
-        # [1] down blocks
+        # [4] down blocks
         self.down_blocks = nn.ModuleList([])
         self.controlnet_down_blocks = nn.ModuleList([])
         if isinstance(only_cross_attention, bool):
@@ -246,7 +243,6 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
         self.controlnet_down_blocks.append(controlnet_block)
         for i, down_block_type in enumerate(down_block_types):
             res = 2 ** i
-            # 1,2,4,8 (every block have motion module)
             input_channel = output_channel
             output_channel = block_out_channels[i]
             is_final_block = i == len(block_out_channels) - 1

@@ -59,6 +59,7 @@ def main(args):
         model_config.W = model_config.get("W", args.W)
         model_config.H = model_config.get("H", args.H)
         model_config.L = model_config.get("L", args.L) # 16
+
         # ------------------------------------------------------------------------------------------------------------------------
         # [2] inference config
         # anomal yaml file (configs/inference/inference-v3.yaml)
@@ -67,8 +68,7 @@ def main(args):
         unet = UNet3DConditionModel.from_pretrained_2d(
             args.pretrained_model_path,
             subfolder="unet",
-            unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)
-        ).to(device)
+            unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
         print(f'original unet attention heads = {unet.config.num_attention_heads}')
 
         # ------------------------------------------------------------------------------------------------------------------------
