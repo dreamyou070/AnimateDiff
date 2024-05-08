@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 #  Changes were made to this source code by Yuwei Guo.
 """ Conversion script for the LoRA's safetensors checkpoints. """
 

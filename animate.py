@@ -12,7 +12,7 @@ from transformers import CLIPTextModel, CLIPTokenizer
 # how to find animatediff ?
 # add present dir on sys
 import os, sys
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ""))
 sys.path.append(parent_dir)
 from animatediff.models.unet import UNet3DConditionModel
 from animatediff.models.sparse_controlnet import SparseControlNetModel

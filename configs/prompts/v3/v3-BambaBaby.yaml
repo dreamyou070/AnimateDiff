@@ -1,14 +1,3 @@
-# use Lora Model Once
-# spacectrl = scribble one
-#lora_model_path: "pretrained/loras/DreamBooth_LoRA/toonyou_beta3.safetensors"
-
-
-# controlnet_config: "configs/inference/sparsectrl/latent_condition.yaml"
-# controlnet_path:   "pretrained/models/sparsectrl/v3_sd15_sparsectrl_scribble.ckpt"
-
-# controlnet_config: "configs/inference/sparsectrl/latent_condition.yaml"
-# controlnet_path:   "pretrained/models/sparsectrl/v3_sd15_sparsectrl_rgb.ckpt"
-
 # 1-animation
 - domain_lora_scale: 1.0
   # domain adopter
@@ -16,23 +5,22 @@
   dreambooth_path:   ""
   inference_config: "configs/inference/inference-v3.yaml"
   # motion module
-  motion_module:    "pretrained/animatediff/motion_module/mm_sd_v15_v2.ckpt" # only motion module (not motion_lora)
-
+  motion_module: "pretrained/animatediff/motion_module/mm_sd_v15_v2.ckpt"
   # controlnet config and the pretraine path
+  # (1) make controlnet model with config
+  # (2) loading pretrained weight
   controlnet_config: "configs/inference/sparsectrl/latent_condition.yaml"
   controlnet_path:   "pretrained/models/sparsectrl/v3_sd15_sparsectrl_rgb.ckpt" # what is controlnet path ... ?
   controlnet_image_indexs: [0]
 
   controlnet_images: # there is controlnet_images ...
     - "__assets__/demos/image/swing_baby.png"
-  H: 256
-  W: 128
   seed: [123]
   steps: 25
   guidance_scale: 8.5
-  prompt:
+  prompt: # bambababy never ...
     - bambababy is playing in a playground
-    - bambababy is playing on the swings
-    - bambababy is having big smile
+    - bambababy is playing in a playground
+    - bambababy is playing in a playground
   n_prompt:
     - "worst quality, low quality, letterboxed"

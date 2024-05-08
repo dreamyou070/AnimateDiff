@@ -423,11 +423,15 @@ class AnimationPipeline(DiffusionPipeline):
 
                     # [5] make controlnet condition
                     down_block_additional_residuals, mid_block_additional_residual = self.controlnet(controlnet_noisy_latents, t,
-                                                                                                      encoder_hidden_states=controlnet_prompt_embeds,
-                                                                                                        controlnet_cond=controlnet_cond,
-                                                                                                        conditioning_mask=controlnet_conditioning_mask,
-                                                                                                        conditioning_scale=controlnet_conditioning_scale,
-                                                                                                        guess_mode=False, return_dict=False,)
+                                                                                                     encoder_hidden_states=controlnet_prompt_embeds,
+                                                                                                     controlnet_cond=controlnet_cond,
+                                                                                                     conditioning_mask=controlnet_conditioning_mask,
+                                                                                                     conditioning_scale=controlnet_conditioning_scale,
+                                                                                                     guess_mode=False,
+                                                                                                     return_dict=False,)
+                    # down_block_additional_residuals
+
+                    # mid_block_additional_residuals
 
                 # ------------------------------------------------------------------------------------------------------------------------------------
                 # [6] predict the noise residual

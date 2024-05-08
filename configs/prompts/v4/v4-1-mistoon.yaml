@@ -1,0 +1,27 @@
+# 1-animation
+
+# model config
+- domain_lora_scale: 1.0
+# [0] domain adoptor
+  adapter_lora_path: "pretrained/animatediff/domain_adopter/v3_sd15_adapter.ckpt"
+  dreambooth_path:   ""
+# [1] unet model
+  inference_config: "configs/inference/unet/inference-v3.yaml"
+# [2] motion model
+  motion_module:    "pretrained/animatediff/motion_module/v3_sd15_mm.ckpt"
+# [3] controlnet model
+  controlnet_config: "configs/inference/sparsectrl/latent_condition.yaml"
+  controlnet_path:   "pretrained/models/sparsectrl/v3_sd15_sparsectrl_rgb.ckpt"
+  controlnet_image_indexs: [0]
+  controlnet_images: # there is controlnet_images ...
+    - "__assets__/demos/image/RealisticVision_firework.png"
+# inference config
+  H: 256
+  W: 256
+  seed: [ 123 ]
+  guidance_scale: 7
+  steps: 25
+  prompt:
+    - 1girl, dancing, masterpiece, best quality
+  n_prompt:
+    - "worst quality, low quality, letterboxed, easynegative"
