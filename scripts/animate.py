@@ -195,7 +195,7 @@ def main(args):
                               height              = model_config.H, # 256
                               video_length        = model_config.L,
                               controlnet_images = controlnet_images, # controlnet here
-                              controlnet_image_index = model_config.get("controlnet_image_indexs", [0]),).videos
+                              controlnet_image_index = model_config.get("controlnet_image_indexs", [0]),).videos # 0 ?
             samples.append(sample)
 
             prompt = "-".join((prompt.replace("/", "").split(" ")[:10]))
