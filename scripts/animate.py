@@ -65,9 +65,17 @@ def main(args):
         # anomal yaml file (configs/inference/inference-v3.yaml)
         # to read yaml file, OmegaConf is necessary
         inference_config = OmegaConf.load(model_config.get("inference_config", args.inference_config))
+
+
+
         unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
                                                        subfolder="unet",
                                                        unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
+
+
+
+
+
         # print(f'original unet attention heads = {unet.config.num_attention_heads}')
 
         # ------------------------------------------------------------------------------------------------------------------------

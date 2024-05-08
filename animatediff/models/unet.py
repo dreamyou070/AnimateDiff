@@ -162,6 +162,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         # ------------------------------------------------------------------------------------------------------------------
         # mid
         self.mid_block = None
+        print(f'in making Unet, mid_block_type = {mid_block_type}')
         if mid_block_type == "UNetMidBlock3DCrossAttn":
             self.mid_block = UNetMidBlock3DCrossAttn(
                 in_channels=block_out_channels[-1],
