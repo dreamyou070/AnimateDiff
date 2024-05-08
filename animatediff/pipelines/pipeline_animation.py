@@ -319,7 +319,9 @@ class AnimationPipeline(DiffusionPipeline):
     def __call__(
         self,
         prompt: Union[str, List[str]],
-        video_length: Optional[int],
+
+        video_length: Optional[int], # [1] video length
+
         height: Optional[int] = None,
         width: Optional[int] = None,
         num_inference_steps: int = 50,
@@ -341,9 +343,11 @@ class AnimationPipeline(DiffusionPipeline):
 
         **kwargs,
     ):
+
         # Default height and width to unet
         height = height or self.unet.config.sample_size * self.vae_scale_factor
         width = width or self.unet.config.sample_size * self.vae_scale_factor
+        print(f'height = {height} ')
 
         # Check inputs. Raise error if not correct
         self.check_inputs(prompt, height, width, callback_steps)
@@ -390,6 +394,7 @@ class AnimationPipeline(DiffusionPipeline):
         # [4] Prepare extra step kwargs.
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
+        # ------------------------------------------------------------------------------------------------------------------------------------
         # [5] Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
@@ -449,7 +454,9 @@ class AnimationPipeline(DiffusionPipeline):
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
 
-        # Post-processing
+        # ------------------------------------------------------------------------------------------------------------------------
+        # what is latents ?? Post-processing
+        # how it be video ?
         video = self.decode_latents(latents)
 
         # Convert to tensor

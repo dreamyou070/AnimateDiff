@@ -56,6 +56,7 @@ def main(args):
         # model config = v3-1-T2V.yaml
         print(f' (5.{model_idx}) model inference')
         # if there is no config, use argument
+        # model_config.get "W" =
         model_config.W = model_config.get("W", args.W)
         model_config.H = model_config.get("H", args.H)
         model_config.L = model_config.get("L", args.L) # 16
@@ -175,12 +176,17 @@ def main(args):
                 torch.seed()
             print(f'model_idx = {model_idx}')
             config[model_idx].random_seed.append(torch.initial_seed())
+            # pipeline is AnimationPipeline
+
+
+            # ------------------------------------------------------------------------------------------------------------
+            # There are 16 frames !
             sample = pipeline(prompt,
                               negative_prompt     = n_prompt,
                               num_inference_steps = model_config.steps,
                               guidance_scale      = model_config.guidance_scale,
-                              width               = model_config.W,
-                              height              = model_config.H,
+                              width               = model_config.W, # 512
+                              height              = model_config.H, # 256
                               video_length        = model_config.L,
                               controlnet_images = controlnet_images, # controlnet here
                               controlnet_image_index = model_config.get("controlnet_image_indexs", [0]),).videos
