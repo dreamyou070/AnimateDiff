@@ -105,23 +105,35 @@ def load_weights(
     lora_model_path            = "",
     lora_alpha                 = 0.8,
 ):
-    print(f'(1) Check adapter lora path = {adapter_lora_path}')
+
 
     # [1] unet with motion module
     unet_state_dict = {}
     if motion_module_path != "":
+
+        # [1] opening motion module file
+        # animatediff/motion_module/v2_lora_ZoomIn.ckpt
         print(f"load motion module from {motion_module_path}")
         motion_module_state_dict = torch.load(motion_module_path, map_location="cpu")
         motion_module_state_dict = motion_module_state_dict["state_dict"] if "state_dict" in motion_module_state_dict else motion_module_state_dict
+        # [2] add modion module dict on unet dict
         unet_state_dict.update({name: param for name, param in motion_module_state_dict.items() if "motion_modules." in name})
         unet_state_dict.pop("animatediff_config", "")
 
-    # why there are unexpected >>>
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------
+    # from scratch, animation pipeline unet should  have motion
+    # why there are unexpected
     missing, unexpected = animation_pipeline.unet.load_state_dict(unet_state_dict, strict=False)
     print(f'missing = {len(missing)}')
     print(f'unexpected = {unexpected}')
     assert len(unexpected) == 0
     del unet_state_dict
+
+
+
+
+
+
 
     # base model
     if dreambooth_model_path != "":

@@ -71,6 +71,10 @@ def main(args):
         # ------------------------------------------------------------------------------------------------------------------------
         # [3] make unet model
         # making 3D unet model
+        additional_kwargs = inference_config.unet_additional_kwargs
+        print(f'additional_kwargs = {additional_kwargs}')
+
+        
         unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
                                                        subfolder="unet",
                                                        unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
@@ -142,11 +146,12 @@ def main(args):
             unet.enable_xformers_memory_efficient_attention()
             if controlnet is not None: controlnet.enable_xformers_memory_efficient_attention()
 
+        # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         # [3] pure pipeline
         pipeline = AnimationPipeline(vae=vae,
                                      text_encoder=text_encoder,
                                      tokenizer=tokenizer,
-                                     unet=unet,
+                                     unet=unet, # unet should have motion module
                                      controlnet=controlnet,
                                      scheduler=DDIMScheduler(**OmegaConf.to_container(inference_config.noise_scheduler_kwargs)),) #.to("cuda")
 
