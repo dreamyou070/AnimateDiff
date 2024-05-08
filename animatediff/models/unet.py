@@ -123,7 +123,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
             is_final_block = i == len(block_out_channels) - 1
             # --------------------------------------------------------------------------------------------
             # every down, mid up, add motion module
-            print(f'when makin gdown block, down_block_type = {down_block_type}')
             down_block = get_down_block(down_block_type,
                                         num_layers=layers_per_block, # num_layers = 2
                                         in_channels=input_channel,
@@ -164,8 +163,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         # mid
         self.mid_block = None
         # UNetMidBlock2DCrossAttn
-
-        print(f'in making Unet, mid_block_type = {mid_block_type}')
         if mid_block_type == "UNetMidBlock3DCrossAttn":
             self.mid_block = UNetMidBlock3DCrossAttn(
                 in_channels=block_out_channels[-1],
@@ -491,9 +488,6 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
             raise RuntimeError(f"{config_file} does not exist")
         with open(config_file, "r") as f:
             config = json.load(f)
-
-        print(f'original config["mid_block_type"] = {config["mid_block_type"]}')
-
         config["_class_name"] = cls.__name__
         config["down_block_types"] = ["CrossAttnDownBlock3D",
                                       "CrossAttnDownBlock3D",
