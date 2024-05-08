@@ -169,10 +169,11 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
         if len(state_dict[pair_keys[0]].shape) == 4:
             weight_up = state_dict[pair_keys[0]].squeeze(3).squeeze(2).to(torch.float32)
             weight_down = state_dict[pair_keys[1]].squeeze(3).squeeze(2).to(torch.float32)
+            print(f' weight_up shape = {weight_up.shape} | weight_down shape = {weight_down.shape}')
             if len(weight_up.shape) == 2 :
                 curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).unsqueeze(2).unsqueeze(3)
             else :
-                conved = torch.nn.functional.conv2d(down_weight.permute(1, 0, 2, 3), up_weight).permute(1, 0, 2, 3)
+                conved = torch.nn.functional.conv2d(weight_down.permute(1, 0, 2, 3), weight_up).permute(1, 0, 2, 3)
                 curr_layer.weight.data += alpha * conved
                 # because of convolution, it cannot squeese
 
