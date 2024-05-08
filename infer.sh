@@ -5,7 +5,7 @@
 # ufotable style
 
 python scripts/animate.py \
- --pretrained-model-path ../../output/lora_unfortable_style \
+ --pretrained-model-path "/share0/dreamyou070/dreamyou070/AnimateDiff/AnimateDiff/output/lora_unfortable_style" \
  --config configs/prompts/v3/v3-1-T2V.yaml \
  --inference-config configs/inference/inference-v1.yaml \
  --H 512 \

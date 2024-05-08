@@ -45,6 +45,7 @@ def main(args):
 
     print(f"\n step 4. loading model")
     device = args.device
+    # loading model
     tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_path, subfolder="tokenizer")
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_path, subfolder="text_encoder").to(device)
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_path, subfolder="vae").to(device)
