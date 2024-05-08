@@ -57,8 +57,7 @@ def convert_lora(pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX
     # directly update weight in diffusers model
 
     # state_dict = my lora state_dict
-    for key in state_dict:
-        print(f' ** key = {key}')
+
     for key in state_dict:
 
         print(f' from toonyou model, key = {key}')
@@ -71,20 +70,24 @@ def convert_lora(pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX
         if "text" in key: # text model
             # cond_stage_model
             # transformer.text_model.embeddings.position_embedding.weight
-            layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_") # model
-            curr_layer = pipeline.text_encoder
-            print(f'get layer_infos = {layer_infos}')
+            layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_") # cond / stage / model
+            curr_layer = pipeline.text_encoder # text encoder module
 
         else:
+            # [first / stage / model], [model]
             layer_infos = key.split(".")[0].split(LORA_PREFIX_UNET + "_")[-1].split("_")
             curr_layer = pipeline.unet
 
         # find the target layer
         temp_name = layer_infos.pop(0) # cond ?
+        print(f'temp_name (cond) = {temp_name}')
 
-        while len(layer_infos) > -1:
+        while len(layer_infos) > -1 :
+
             try:
+                # text_module getattr cond
                 curr_layer = curr_layer.__getattr__(temp_name)
+                print(f'curr_layer = {curr_layer}')
                 if len(layer_infos) > 0:
                     temp_name = layer_infos.pop(0)
                 elif len(layer_infos) == 0:
