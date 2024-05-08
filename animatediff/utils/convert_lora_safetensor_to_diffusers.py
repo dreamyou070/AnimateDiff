@@ -117,6 +117,8 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
 
     # load LoRA weight from .safetensors
     state_dict = load_file(checkpoint_path)
+    for key in state_dict :
+        print(f'civitai key = {key}')
 
     visited = []
 
