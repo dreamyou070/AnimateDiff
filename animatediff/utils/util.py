@@ -142,15 +142,19 @@ def load_weights(
         del dreambooth_state_dict
         
     # lora layers
-    if lora_model_path != "":
+    if lora_model_path != "": # toonyou model
         print(f"load lora model from {lora_model_path}")
         assert lora_model_path.endswith(".safetensors")
         lora_state_dict = {}
         with safe_open(lora_model_path, framework="pt", device="cpu") as f:
             for key in f.keys():
                 lora_state_dict[key] = f.get_tensor(key)
-                
-        animation_pipeline = convert_lora(animation_pipeline, lora_state_dict, alpha=lora_alpha)
+
+        # ------------------------------------------------------------------------------------------------------------ #
+        # convert animation pipeline
+        animation_pipeline = convert_lora(animation_pipeline,
+                                          lora_state_dict, # my lora
+                                          alpha=lora_alpha)
         del lora_state_dict
 
     # domain adapter lora
