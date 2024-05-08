@@ -6,7 +6,7 @@
 
 python scripts/animate.py \
  --pretrained-model-path "/share0/dreamyou070/dreamyou070/AnimateDiff/AnimateDiff/pretrained/models/StableDiffusion/BambaBaby" \
- --config configs/prompts/v3/v3-pumpkin-head.yaml \
+ --config configs/prompts/v3/v3-BambaBaby.yaml \
  --inference-config configs/inference/inference-v1.yaml \
  --H 300 \
  --W 512 \
