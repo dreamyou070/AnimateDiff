@@ -11,7 +11,7 @@
   motion_module:    "pretrained/animatediff/motion_module/v3_sd15_mm.ckpt"
 # [3] controlnet model
   controlnet_config: "configs/inference/sparsectrl/latent_condition.yaml"
-  controlnet_path:   "pretrained/models/sparsectrl/v3_sd15_sparsectrl_rgb.ckpt"
+  controlnet_path:   "pretrained/animatediff/controlnet/v3_sd15_sparsectrl_rgb.ckpt"
   controlnet_image_indexs: [0]
   controlnet_images: # there is controlnet_images ...
     - "__assets__/demos/image/RealisticVision_firework.png"
