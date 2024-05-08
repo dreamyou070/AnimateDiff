@@ -25,8 +25,8 @@
 
   controlnet_images: # there is controlnet_images ...
     - "__assets__/demos/image/swing_baby.png"
-  H: 512
-  W: 256
+  H: 256
+  W: 128
   seed: [123]
   steps: 25
   guidance_scale: 8.5

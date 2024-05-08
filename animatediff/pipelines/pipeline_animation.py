@@ -342,7 +342,7 @@ class AnimationPipeline(DiffusionPipeline):
         # Default height and width to unet
         height = height or self.unet.config.sample_size * self.vae_scale_factor
         width = width or self.unet.config.sample_size * self.vae_scale_factor
-        print(f'height = {height} ')
+
 
         # Check inputs. Raise error if not correct
         self.check_inputs(prompt, height, width, callback_steps)
@@ -411,8 +411,7 @@ class AnimationPipeline(DiffusionPipeline):
                     controlnet_images = controlnet_images.to(latents.device)
 
                     # [4] controlnet condition checking
-                    controlnet_cond_shape    = list(controlnet_images.shape)
-                    print(f'controlnet_cond_shape = {controlnet_cond_shape}')
+                    controlnet_cond_shape    = list(controlnet_images.shape) # 1,4,1,64,32(frame number)
                     controlnet_cond_shape[2] = video_length
                     controlnet_cond = torch.zeros(controlnet_cond_shape).to(latents.device)
                     controlnet_conditioning_mask_shape    = list(controlnet_cond.shape)
