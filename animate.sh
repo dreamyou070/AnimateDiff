@@ -5,7 +5,7 @@
 
 number_of_frame=16
 Frames_per_second=8
-pretrained_model_path="pretrained/models/StableDiffusion/stable-diffusion-v1-5"
+pretrained_model_path="../../pretrained_stable_diffusion/stable-diffusion-v1-5"
 
 python animate.py \
  --pretrained_model_path "${pretrained_model_path}" \
