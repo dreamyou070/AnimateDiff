@@ -98,13 +98,14 @@ def load_weights(
     motion_module_path         = "",
     motion_module_lora_configs = [],
     # domain adapter
-    adapter_lora_path          = "",
+    adapter_lora_path          = "", # adapter lora path
     adapter_lora_scale         = 1.0,
     # image layers
     dreambooth_model_path      = "",
     lora_model_path            = "",
     lora_alpha                 = 0.8,
 ):
+    print(f'(1) Check adapter lora path = {adapter_lora_path}')
 
     # [1] unet with motion module
     unet_state_dict = {}
