@@ -39,8 +39,7 @@ def main(args):
     savedir = os.path.join('samples', f'{Path(args.config).stem}-{time_str}')
     os.makedirs(savedir, exist_ok=True)
 
-    print(f"\n step 3. check config")
-    # OmegaConf.load (read config yaml)
+    print(f"\n step 3. check config") # OmegaConf.load (read config yaml)
     config = OmegaConf.load(args.config)
     samples = []
 
@@ -65,10 +64,9 @@ def main(args):
         # anomal yaml file (configs/inference/inference-v3.yaml)
         # to read yaml file, OmegaConf is necessary
         inference_config = OmegaConf.load(model_config.get("inference_config", args.inference_config))
-        unet = UNet3DConditionModel.from_pretrained_2d(
-            args.pretrained_model_path,
-            subfolder="unet",
-            unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
+        unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
+                                                       subfolder="unet",
+                                                       unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
         # print(f'original unet attention heads = {unet.config.num_attention_heads}')
 
         # ------------------------------------------------------------------------------------------------------------------------
@@ -90,17 +88,24 @@ def main(args):
             controlnet_state_dict.pop("animatediff_config", "")
             controlnet.load_state_dict(controlnet_state_dict)
             controlnet.to(device)
+
+            # ----------------------------------------------------------------------------------------------------------
+            # controlnet_images ?
             image_paths = model_config.controlnet_images # more than two ??
+            print(f'controlnet image paths = {image_paths}')
             if isinstance(image_paths, str) :
                 image_paths = [image_paths]
+
+
+
+            # why there is no controlnet_images ?
             for path in image_paths:
                 print(f'control image = {controlnet_images}')
             assert len(image_paths) <= model_config.L
             # L mean the frame
             # here, L = if there is no L ..
             image_transforms = transforms.Compose([transforms.RandomResizedCrop((model_config.H, model_config.W), (1.0, 1.0),
-                                                                                ratio=(model_config.W/model_config.H,
-                                                                                       model_config.W/model_config.H)),
+                                                                                ratio=(model_config.W/model_config.H, model_config.W/model_config.H)),
                                                    transforms.ToTensor(),])
             if model_config.get("normalize_condition_images", False):
                 def image_norm(image):
@@ -110,9 +115,12 @@ def main(args):
                     return image
             else:
                 image_norm = lambda x: x # no normalizing mappint
+
+
             controlnet_images = [image_norm(image_transforms(Image.open(path).convert("RGB"))) for path in image_paths]
-            os.makedirs(os.path.join(savedir,
-                                     "control_images"), exist_ok=True)
+
+
+            os.makedirs(os.path.join(savedir, "control_images"), exist_ok=True)
             for i, image in enumerate(controlnet_images):
                 Image.fromarray((255. * (image.numpy().transpose(1,2,0))).astype(np.uint8)).save(f"{savedir}/control_images/{i}.png")
 

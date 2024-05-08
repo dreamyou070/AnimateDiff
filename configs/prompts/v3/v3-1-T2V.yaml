@@ -16,7 +16,7 @@
   steps: 25
   guidance_scale: 8.5
   controlnet_image_indexs: [0]
-  controlnet_images:
+  controlnet_images: # there is controlnet_images ...
     - "__assets__/demos/image/RealisticVision_firework.png"
   prompt:
     - a girl, seeing front, smiling
