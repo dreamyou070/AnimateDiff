@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 #  Changes were made to this source code by Yuwei Guo.
 """ Conversion script for the LoRA's safetensors checkpoints. """
 
@@ -48,53 +48,40 @@ def load_diffusers_lora(pipeline, state_dict, alpha=1.0):
 
 
 def convert_lora(pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX_TEXT_ENCODER="lora_te", alpha=0.6):
-
     # load base model
-    # pipeline = StableDiffusionPipeline.from_pretrained(base_model_path, torch_dtype=torch.float32)
+
+    #pipeline = StableDiffusionPipeline.from_pretrained(base_model_path, torch_dtype=torch.float32)
+
     # load LoRA weight from .safetensors
     # state_dict = load_file(checkpoint_path)
+
     visited = []
     # directly update weight in diffusers model
-
-    # state_dict = my lora state_dict
-
     for key in state_dict:
-
-        print(f' from toonyou model, key = {key}')
         # it is suggested to print out the key, it usually will be something like below
         # "lora_te_text_model_encoder_layers_0_self_attn_k_proj.lora_down.weight"
+
         # as we have set the alpha beforehand, so just skip
         if ".alpha" in key or key in visited:
             continue
 
-        if "text" in key: # text model
-            # cond_stage_model
-            # transformer.text_model.embeddings.position_embedding.weight
-            layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_") # cond / stage / model
-            curr_layer = pipeline.text_encoder # text encoder module
-
+        if "text" in key:
+            layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_")
+            curr_layer = pipeline.text_encoder
         else:
-            # [first / stage / model], [model]
             layer_infos = key.split(".")[0].split(LORA_PREFIX_UNET + "_")[-1].split("_")
             curr_layer = pipeline.unet
 
         # find the target layer
-        temp_name = layer_infos.pop(0) # cond ?
-        print(f'temp_name (cond) = {temp_name}')
-
-        while len(layer_infos) > -1 :
-
+        temp_name = layer_infos.pop(0)
+        while len(layer_infos) > -1:
             try:
-                # text_module getattr cond
                 curr_layer = curr_layer.__getattr__(temp_name)
-                print(f'curr_layer = {curr_layer}')
                 if len(layer_infos) > 0:
                     temp_name = layer_infos.pop(0)
                 elif len(layer_infos) == 0:
                     break
             except Exception:
-                # ------------------------------------------------------------------------------------------------ #
-
                 if len(temp_name) > 0:
                     temp_name += "_" + layer_infos.pop(0)
                 else:
@@ -124,7 +111,7 @@ def convert_lora(pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX
 
     return pipeline
 
-
+"""
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -163,3 +150,4 @@ if __name__ == "__main__":
 
     pipe = pipe.to(args.device)
     pipe.save_pretrained(args.dump_path, safe_serialization=args.to_safetensors)
+"""
