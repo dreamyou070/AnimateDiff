@@ -16,7 +16,7 @@
   dreambooth_path:   ""
   inference_config: "configs/inference/inference-v3.yaml"
   # motion module
-  motion_module:    "pretrained/animatediff/motion_module/v2_lora_ZoomIn.ckpt" # only motion module (not motion_lora)
+  motion_module:    "pretrained/animatediff/motion_module/mm_sd_v15_v2.ckpt" # only motion module (not motion_lora)
 
   # controlnet config and the pretraine path
   controlnet_config: "configs/inference/sparsectrl/latent_condition.yaml"

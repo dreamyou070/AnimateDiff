@@ -123,6 +123,8 @@ def load_weights(
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------
     # from scratch, animation pipeline unet should  have motion
     # why there are unexpected
+    # why there are so many unexpected
+    # motion lora !
     missing, unexpected = animation_pipeline.unet.load_state_dict(unet_state_dict, strict=False)
     print(f'missing = {len(missing)}')
     print(f'unexpected = {unexpected}')

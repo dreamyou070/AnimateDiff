@@ -72,9 +72,6 @@ def main(args):
         # [3] make unet model
         # making 3D unet model
         additional_kwargs = inference_config.unet_additional_kwargs
-        print(f'additional_kwargs = {additional_kwargs}')
-
-        
         unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
                                                        subfolder="unet",
                                                        unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
@@ -89,15 +86,18 @@ def main(args):
             print(f' controlnet start !')
             assert model_config.get("controlnet_images", "") != ""
             assert model_config.get("controlnet_config", "") != ""
+
+
             # make new attribute
             unet.config.num_attention_heads = 8
             unet.config.projection_class_embeddings_input_dim = None
+            # model_config.controlnet_config ? configs/inference/sparsectrl/latent_condition.yaml
             controlnet_config = OmegaConf.load(model_config.controlnet_config)
+            # controlnet additional kwargs -> motion module ?
+            # additional kwargs !
             controlnet = SparseControlNetModel.from_unet(unet,
                                                          controlnet_additional_kwargs=controlnet_config.get("controlnet_additional_kwargs", {}))
             print(f"loading controlnet checkpoint from {model_config.controlnet_path} ...")
-
-            # what is controlnet path ???
             controlnet_state_dict = torch.load(model_config.controlnet_path, map_location="cpu")
             controlnet_state_dict = controlnet_state_dict["controlnet"] if "controlnet" in controlnet_state_dict else controlnet_state_dict
             controlnet_state_dict.pop("animatediff_config", "")
@@ -109,7 +109,6 @@ def main(args):
             image_paths = model_config.controlnet_images # more than two ??
             if isinstance(image_paths, str) :
                 image_paths = [image_paths]
-            # why there is no controlnet_images ?
             assert len(image_paths) <= model_config.L
 
             # ----------------------------------------------------------------------------------------------------------
@@ -134,6 +133,7 @@ def main(args):
             # ----------------------------------------------------------------------------------------------------------
             # original range = batch, frame = 1, channel = 3, h, w
             # rearranged = batch, channel, frame = 2, H, W
+
             # [3] arranging controlnet images
             if controlnet.use_simplified_condition_embedding:
                 num_controlnet_images = controlnet_images.shape[2]
@@ -157,11 +157,15 @@ def main(args):
 
         # [4] pipeline with motion module / lora / domain adapter
         pipeline = load_weights(pipeline,
+
                                 motion_module_path         = model_config.get("motion_module", ""),                 # motion module
                                 motion_module_lora_configs = model_config.get("motion_module_lora_configs", []),
+
                                 adapter_lora_path          = model_config.get("adapter_lora_path", ""),             # domain adapter
                                 adapter_lora_scale         = model_config.get("adapter_lora_scale", 1.0),
+
                                 dreambooth_model_path      = model_config.get("dreambooth_path", ""),
+
                                 lora_model_path            = model_config.get("lora_model_path", ""),
                                 lora_alpha                 = model_config.get("lora_alpha", 0.8),).to(device)
 

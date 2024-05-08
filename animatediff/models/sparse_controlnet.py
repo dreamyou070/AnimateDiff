@@ -317,6 +317,7 @@ class SparseControlNetModel(ModelMixin, ConfigMixin):
 
         controlnet_additional_kwargs: dict = {},
     ):
+        # 1) make controlnet model (iid)
         controlnet = cls(
             in_channels=unet.config.in_channels,
             flip_sin_to_cos=unet.config.flip_sin_to_cos,
