@@ -92,17 +92,12 @@ def main(args):
             # ----------------------------------------------------------------------------------------------------------
             # controlnet_images ?
             image_paths = model_config.controlnet_images # more than two ??
-            print(f'controlnet image paths = {image_paths}')
             if isinstance(image_paths, str) :
                 image_paths = [image_paths]
-
-
-
             # why there is no controlnet_images ?
-            for path in image_paths:
-                print(f'control image = {controlnet_images}')
             assert len(image_paths) <= model_config.L
-            # L mean the frame
+
+            # ----------------------------------------------------------------------------------------------------------
             # here, L = if there is no L ..
             image_transforms = transforms.Compose([transforms.RandomResizedCrop((model_config.H, model_config.W), (1.0, 1.0),
                                                                                 ratio=(model_config.W/model_config.H, model_config.W/model_config.H)),
@@ -115,19 +110,17 @@ def main(args):
                     return image
             else:
                 image_norm = lambda x: x # no normalizing mappint
-
-
             controlnet_images = [image_norm(image_transforms(Image.open(path).convert("RGB"))) for path in image_paths]
-
-
             os.makedirs(os.path.join(savedir, "control_images"), exist_ok=True)
             for i, image in enumerate(controlnet_images):
                 Image.fromarray((255. * (image.numpy().transpose(1,2,0))).astype(np.uint8)).save(f"{savedir}/control_images/{i}.png")
-
             controlnet_images = torch.stack(controlnet_images).unsqueeze(0).to(device)
             controlnet_images = rearrange(controlnet_images, "b f c h w -> b c f h w")
             # original range = batch, frame = 1, channel = 3, h, w
             # rearranged = batch, channel, frame = 2, H, W
+
+            # ----------------------------------------------------------------------------------------------------------
+            # [3] arranging controlnet images
             if controlnet.use_simplified_condition_embedding:
                 num_controlnet_images = controlnet_images.shape[2]
                 controlnet_images = rearrange(controlnet_images, "b c f h w -> (b f) c h w")
@@ -135,6 +128,7 @@ def main(args):
                 controlnet_images = rearrange(controlnet_images, "(b f) c h w -> b c f h w", f=num_controlnet_images)
                 # vae prepared control image
 
+        # ----------------------------------------------------------------------------------------------------------
         # set xformers
         if is_xformers_available() and (not args.without_xformers):
             unet.enable_xformers_memory_efficient_attention()
@@ -153,15 +147,12 @@ def main(args):
                                 motion_module_lora_configs = model_config.get("motion_module_lora_configs", []),
                                 adapter_lora_path          = model_config.get("adapter_lora_path", ""),             # domain adapter
                                 adapter_lora_scale         = model_config.get("adapter_lora_scale", 1.0),
-                                # image layers
                                 dreambooth_model_path      = model_config.get("dreambooth_path", ""),
-
                                 lora_model_path            = model_config.get("lora_model_path", ""),
                                 lora_alpha                 = model_config.get("lora_alpha", 0.8),).to(device)
-
         # [5] inference
-        prompts      = model_config.prompt
-        n_prompts    = list(model_config.n_prompt) * len(prompts) if len(model_config.n_prompt) == 1 else model_config.n_prompt
+        prompts = model_config.prompt
+        n_prompts = list(model_config.n_prompt) * len(prompts) if len(model_config.n_prompt) == 1 else model_config.n_prompt
         random_seeds = model_config.get("seed", [-1])
         random_seeds = [random_seeds] if isinstance(random_seeds, int) else list(random_seeds)
         random_seeds = random_seeds * len(prompts) if len(random_seeds) == 1 else random_seeds
