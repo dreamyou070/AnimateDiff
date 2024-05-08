@@ -116,10 +116,9 @@ def main(args):
                 Image.fromarray((255. * (image.numpy().transpose(1,2,0))).astype(np.uint8)).save(f"{savedir}/control_images/{i}.png")
             controlnet_images = torch.stack(controlnet_images).unsqueeze(0).to(device)
             controlnet_images = rearrange(controlnet_images, "b f c h w -> b c f h w")
+            # ----------------------------------------------------------------------------------------------------------
             # original range = batch, frame = 1, channel = 3, h, w
             # rearranged = batch, channel, frame = 2, H, W
-
-            # ----------------------------------------------------------------------------------------------------------
             # [3] arranging controlnet images
             if controlnet.use_simplified_condition_embedding:
                 num_controlnet_images = controlnet_images.shape[2]
@@ -141,6 +140,7 @@ def main(args):
                                      unet=unet,
                                      controlnet=controlnet,
                                      scheduler=DDIMScheduler(**OmegaConf.to_container(inference_config.noise_scheduler_kwargs)),) #.to("cuda")
+
         # [4] pipeline with motion module / lora / domain adapter
         pipeline = load_weights(pipeline,
                                 motion_module_path         = model_config.get("motion_module", ""),                 # motion module
@@ -150,6 +150,7 @@ def main(args):
                                 dreambooth_model_path      = model_config.get("dreambooth_path", ""),
                                 lora_model_path            = model_config.get("lora_model_path", ""),
                                 lora_alpha                 = model_config.get("lora_alpha", 0.8),).to(device)
+
         # [5] inference
         prompts = model_config.prompt
         n_prompts = list(model_config.n_prompt) * len(prompts) if len(model_config.n_prompt) == 1 else model_config.n_prompt
