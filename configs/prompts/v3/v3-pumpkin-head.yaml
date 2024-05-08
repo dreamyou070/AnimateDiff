@@ -17,9 +17,11 @@
   guidance_scale: 8.5
   controlnet_image_indexs: [0]
   controlnet_images: # there is controlnet_images ...
-    - "__assets__/demos/image/RealisticVision_firework.png"
+    - "__assets__/demos/image/walking_girl.png"
   prompt:
-    - a girl, seeing front, smiling
-    - a girl, seeing front, smiling
+    - a pumpkinhead, walking, in front of the building, sunny day
+    - a pumpkinhead, walking, in front of the building
+    - a pumpkinhead, walking, in front of the building, near tree
+    - a pumpkinhead, walking, in front of the building, with blue sky
   n_prompt:
     - "worst quality, low quality, letterboxed"

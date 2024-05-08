@@ -492,6 +492,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         with open(config_file, "r") as f:
             config = json.load(f)
 
+        print(f'original config["mid_block_type"] = {config["mid_block_type"]}')
+
         config["_class_name"] = cls.__name__
         config["down_block_types"] = ["CrossAttnDownBlock3D",
                                       "CrossAttnDownBlock3D",
@@ -501,7 +503,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
                                     "CrossAttnUpBlock3D",
                                     "CrossAttnUpBlock3D",
                                     "CrossAttnUpBlock3D"]
-        config["mid_block_types"] = ["UNetMidBlock3DCrossAttn"]
+        config["mid_block_type"] = ["UNetMidBlock3DCrossAttn"]
         from diffusers.utils import WEIGHTS_NAME
         model = cls.from_config(config, **unet_additional_kwargs)
 

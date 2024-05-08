@@ -68,6 +68,7 @@ def main(args):
 
         # ------------------------------------------------------------------------------------------------------------------------
         # [3] make unet model
+        # making 3D unet model
         unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
                                                        subfolder="unet",
                                                        unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
