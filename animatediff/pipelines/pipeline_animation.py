@@ -316,33 +316,28 @@ class AnimationPipeline(DiffusionPipeline):
         return latents
 
     @torch.no_grad()
-    def __call__(
-        self,
-        prompt: Union[str, List[str]],
+    def __call__(self,
+                prompt: Union[str, List[str]],
+                video_length: Optional[int], # [1] video length
 
-        video_length: Optional[int], # [1] video length
-
-        height: Optional[int] = None,
-        width: Optional[int] = None,
-        num_inference_steps: int = 50,
-        guidance_scale: float = 7.5,
-        negative_prompt: Optional[Union[str, List[str]]] = None,
-        num_videos_per_prompt: Optional[int] = 1,
-        eta: float = 0.0,
-        generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
-        latents: Optional[torch.FloatTensor] = None,
-        output_type: Optional[str] = "tensor",
-        return_dict: bool = True,
-        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
-        callback_steps: Optional[int] = 1,
-
-        # support controlnet
-        controlnet_images: torch.FloatTensor = None,
-        controlnet_image_index: list = [0],
-        controlnet_conditioning_scale: Union[float, List[float]] = 1.0,
-
-        **kwargs,
-    ):
+                height: Optional[int] = None,
+                width: Optional[int] = None,
+                num_inference_steps: int = 50,
+                guidance_scale: float = 7.5,
+                negative_prompt: Optional[Union[str, List[str]]] = None,
+                num_videos_per_prompt: Optional[int] = 1,
+                eta: float = 0.0,
+                generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
+                latents: Optional[torch.FloatTensor] = None,
+                output_type: Optional[str] = "tensor",
+                return_dict: bool = True,
+                callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
+                callback_steps: Optional[int] = 1,
+                # support controlnet
+                controlnet_images: torch.FloatTensor = None,
+                controlnet_image_index: list = [0],
+                controlnet_conditioning_scale: Union[float, List[float]] = 1.0,
+                **kwargs,):
 
         # Default height and width to unet
         height = height or self.unet.config.sample_size * self.vae_scale_factor

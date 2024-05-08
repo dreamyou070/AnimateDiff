@@ -57,6 +57,7 @@ def main(args):
         print(f' (5.{model_idx}) model inference')
         # if there is no config, use argument
         # model_config.get "W" =
+        print(f'model_config = {model_config}')
         model_config.W = model_config.get("W", args.W)
         model_config.H = model_config.get("H", args.H)
         model_config.L = model_config.get("L", args.L) # 16
@@ -165,7 +166,10 @@ def main(args):
         random_seeds = [random_seeds] if isinstance(random_seeds, int) else list(random_seeds)
         random_seeds = random_seeds * len(prompts) if len(random_seeds) == 1 else random_seeds
         config[model_idx].random_seed = []
+
+
         for prompt_idx, (prompt, n_prompt, random_seed) in enumerate(zip(prompts, n_prompts, random_seeds)):
+
 
             # make two video .. ?
             # one by one
@@ -176,11 +180,11 @@ def main(args):
                 torch.seed()
             print(f'model_idx = {model_idx}')
             config[model_idx].random_seed.append(torch.initial_seed())
-            # pipeline is AnimationPipeline
+
 
 
             # ------------------------------------------------------------------------------------------------------------
-            # There are 16 frames !
+            # There are 16 frames (pipeline is AnimationPipeline) !
             sample = pipeline(prompt,
                               negative_prompt     = n_prompt,
                               num_inference_steps = model_config.steps,
