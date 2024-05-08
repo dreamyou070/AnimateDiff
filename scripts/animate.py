@@ -66,20 +66,14 @@ def main(args):
         # to read yaml file, OmegaConf is necessary
         inference_config = OmegaConf.load(model_config.get("inference_config", args.inference_config))
 
-
-
+        # ------------------------------------------------------------------------------------------------------------------------
+        # [3] make unet model
         unet = UNet3DConditionModel.from_pretrained_2d(args.pretrained_model_path,
                                                        subfolder="unet",
                                                        unet_additional_kwargs=OmegaConf.to_container(inference_config.unet_additional_kwargs)).to(device)
 
-
-
-
-
-        # print(f'original unet attention heads = {unet.config.num_attention_heads}')
-
         # ------------------------------------------------------------------------------------------------------------------------
-        # [2] controlnet
+        # [4] controlnet
         controlnet = controlnet_images = None # scribble
         if model_config.get("controlnet_path", "") != "":
             print(f' controlnet start !')
@@ -135,8 +129,6 @@ def main(args):
                 controlnet_images = vae.encode(controlnet_images * 2. - 1.).latent_dist.sample() * 0.18215
                 controlnet_images = rearrange(controlnet_images, "(b f) c h w -> b c f h w", f=num_controlnet_images)
                 # vae prepared control image
-
-        # ----------------------------------------------------------------------------------------------------------
         # set xformers
         if is_xformers_available() and (not args.without_xformers):
             unet.enable_xformers_memory_efficient_attention()

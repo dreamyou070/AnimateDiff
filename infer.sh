@@ -5,8 +5,8 @@
 # ufotable style
 
 python scripts/animate.py \
- --pretrained-model-path "/share0/dreamyou070/dreamyou070/AnimateDiff/AnimateDiff/output/lora_unfortable_style" \
- --config configs/prompts/v3/v3-1-T2V.yaml \
+ --pretrained-model-path "/share0/dreamyou070/dreamyou070/AnimateDiff/AnimateDiff/pretrained/models/StableDiffusion/Pumpkinhead" \
+ --config configs/prompts/v3/v3-pumpkin-head.yaml \
  --inference-config configs/inference/inference-v1.yaml \
  --H 512 \
  --W 512 \

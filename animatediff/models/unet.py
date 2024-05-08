@@ -484,13 +484,14 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
             pretrained_model_path = os.path.join(pretrained_model_path, subfolder)
         print(f"loaded 3D unet's pretrained weights from {pretrained_model_path} ...")
 
-        # --------------------------------------------------------------------------------------------
-        # [1] make scratch model
+        # --------------------------------------------------------------------------------------------------------------
+        # [1] make scratch model (not 2D but 3D)
         config_file = os.path.join(pretrained_model_path, 'config.json')
         if not os.path.isfile(config_file):
             raise RuntimeError(f"{config_file} does not exist")
         with open(config_file, "r") as f:
             config = json.load(f)
+
         config["_class_name"] = cls.__name__
         config["down_block_types"] = ["CrossAttnDownBlock3D",
                                       "CrossAttnDownBlock3D",
@@ -500,10 +501,11 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
                                     "CrossAttnUpBlock3D",
                                     "CrossAttnUpBlock3D",
                                     "CrossAttnUpBlock3D"]
+        config["mid_block_types"] = ["UNetMidBlock3DCrossAttn"]
         from diffusers.utils import WEIGHTS_NAME
         model = cls.from_config(config, **unet_additional_kwargs)
 
-        # --------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------------------------
         # [2] load state dict
         model_file = os.path.join(pretrained_model_path, WEIGHTS_NAME)
         if not os.path.isfile(model_file):
@@ -512,7 +514,8 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
         state_dict = torch.load(model_file, map_location="cpu")
         m, u = model.load_state_dict(state_dict, strict=False)
         print(f"### missing keys: {len(m)}; \n### unexpected keys: {len(u)};")
-        # --------------------------------------------------------------------------------------------
+
+        # --------------------------------------------------------------------------------------------------------------
         # [3] loading motion module
         params = [p.numel() if "motion_modules." in n else 0 for n, p in model.named_parameters()]
         print(f"### Motion Module Parameters: {sum(params) / 1e6} M")

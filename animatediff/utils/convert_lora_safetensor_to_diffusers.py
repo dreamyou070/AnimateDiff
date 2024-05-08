@@ -139,7 +139,7 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
             curr_layer = pipeline.unet
 
         # ------------------------------------------------------------------------------------------------------------------------
-        # [4] make full temp_name
+        # [4] make full temp_name : checking final name
         temp_name = layer_infos.pop(0)
         while len(layer_infos) > -1:
             try:
@@ -152,15 +152,14 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
                 if len(temp_name) > 0:
                     temp_name += "_" + layer_infos.pop(0)
                 else:
-                    temp_name = layer_infos.pop(0)
-        print(f'temp name (made name) = {temp_name} | curr_layer = {curr_layer}')
+                    temp_name = layer_infos.pop(0) # linear or convolution layer
 
         # ------------------------------------------------------------------------------------------------------------------------
         # [5] get lora weight
-        pair_keys = []
+        pair_keys = [] # [up, down], [down, up]
         if "lora_down" in key:
             # [lora down, lora_up]
-            pair_keys.append(key.replace("lora_down", "lora_up"))
+            pair_keys.append(key.replace("lora_down", "lora_up")) # up model
             pair_keys.append(key)
         else:
             pair_keys.append(key)
