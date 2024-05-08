@@ -162,9 +162,6 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
         else:
             pair_keys.append(key)
             pair_keys.append(key.replace("lora_up", "lora_down"))
-
-        print(f'len of pair_keys = {len(pair_keys)}')
-
         # update weight
         if len(state_dict[pair_keys[0]].shape) == 4:
             # 3X3 conv
@@ -182,12 +179,9 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
             weight_up = state_dict[pair_keys[0]].to(torch.float32)
             weight_down = state_dict[pair_keys[1]].to(torch.float32)
             curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down)
-        
-
         # update visited list
         for item in pair_keys:
             visited.append(item)
-
     return pipeline
 
 
@@ -217,7 +211,6 @@ if __name__ == "__main__":
     lora_prefix_text_encoder = args.lora_prefix_text_encoder
     alpha = args.alpha
     pipe = convert(base_model_path, checkpoint_path, lora_prefix_unet, lora_prefix_text_encoder, alpha)
-
     pipe = pipe.to(args.device)
     pipe.save_pretrained(args.dump_path, safe_serialization=args.to_safetensors)
 
