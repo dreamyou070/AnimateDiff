@@ -75,6 +75,9 @@ def main(args):
 
         # ------------------------------------------------------------------------------------------------------------------------
         # [4] controlnet
+        # what kind of controlnet to use ... ?
+        # what is controlnet image ... ?
+
         controlnet = controlnet_images = None # scribble
         if model_config.get("controlnet_path", "") != "":
             print(f' controlnet start !')
@@ -153,6 +156,7 @@ def main(args):
                                 lora_model_path            = model_config.get("lora_model_path", ""),
                                 lora_alpha                 = model_config.get("lora_alpha", 0.8),).to(device)
 
+        # -----------------------------------------------------------------------------------------------------------------------
         # [5] inference
         prompts = model_config.prompt
         n_prompts = list(model_config.n_prompt) * len(prompts) if len(model_config.n_prompt) == 1 else model_config.n_prompt
@@ -161,10 +165,15 @@ def main(args):
         random_seeds = random_seeds * len(prompts) if len(random_seeds) == 1 else random_seeds
         config[model_idx].random_seed = []
         for prompt_idx, (prompt, n_prompt, random_seed) in enumerate(zip(prompts, n_prompts, random_seeds)):
-            
+
+            # make two video .. ?
+            # one by one
             # manually set random seed for reproduction
-            if random_seed != -1: torch.manual_seed(random_seed)
-            else: torch.seed()
+            if random_seed != -1:
+                torch.manual_seed(random_seed)
+            else:
+                torch.seed()
+            print(f'model_idx = {model_idx}')
             config[model_idx].random_seed.append(torch.initial_seed())
             sample = pipeline(prompt,
                               negative_prompt     = n_prompt,
