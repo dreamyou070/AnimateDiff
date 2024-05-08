@@ -41,6 +41,8 @@ def main(args):
 
     print(f"\n step 3. check config") # OmegaConf.load (read config yaml)
     config = OmegaConf.load(args.config)
+    print(f'basic config = {config}')
+    # what is config ???
     samples = []
 
     print(f"\n step 4. loading model")
