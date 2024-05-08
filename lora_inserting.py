@@ -39,6 +39,9 @@ def main(args) :
     try :
         pipeline = StableDiffusionPipeline.from_pretrained(base_model_path,
                                                            torch_dtype=torch.float32)
+        pipeline.load_lora_weights("lordjia/by-feng-zikai",
+                                   weight_name=checkpoint_path,
+                                   adapter_name="feng")
         pipe = convert(base_model_path,
                        checkpoint_path,
                        lora_prefix_unet,
@@ -46,8 +49,10 @@ def main(args) :
                             alpha)
         pipe = pipe.to(args.device)
     except :
-        pipe = StableDiffusionPipeline.from_pretrained(checkpoint_path,
-                                                       torch_dtype=torch.float32)
+        pipeline = StableDiffusionPipeline.from_pretrained(base_model_path,
+                                                           torch_dtype=torch.float32)
+        # change weight dtype
+
 
     pipe.save_pretrained(args.dump_path, safe_serialization=args.to_safetensors)
 
