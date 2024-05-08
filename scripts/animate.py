@@ -40,8 +40,8 @@ def main(args):
     os.makedirs(savedir, exist_ok=True)
 
     print(f"\n step 3. check config") # OmegaConf.load (read config yaml)
-    config = OmegaConf.load(args.config)
-    print(f'basic config = {config}')
+    config = OmegaConf.load(args.config) # load # why it cannot read configuratio of model?
+
     # what is config ???
     samples = []
 
