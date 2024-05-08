@@ -121,12 +121,9 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
         print(f'civitai key = {key}')
 
     visited = []
-
     # directly update weight in diffusers model
     for key in state_dict:
-
         # key = cond_stage_model.transformer.text_model.encoder.layers.1.mlp.fc2.weight
-
         # it is suggested to print out the key, it usually will be something like below
         # "lora_te_text_model_encoder_layers_0_self_attn_k_proj.lora_down.weight"
 
@@ -135,6 +132,8 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
             continue
 
         if "text" in key:
+            # there is no lora_te ...
+
             layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_")
             curr_layer = pipeline.text_encoder
         else:
@@ -143,6 +142,7 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
 
         # find the target layer
         temp_name = layer_infos.pop(0)
+
         # ------------------------------------------------------------------------------------------------------------------------
         while len(layer_infos) > -1:
             try:
