@@ -503,7 +503,7 @@ class UNet3DConditionModel(ModelMixin, ConfigMixin):
                                     "CrossAttnUpBlock3D",
                                     "CrossAttnUpBlock3D",
                                     "CrossAttnUpBlock3D"]
-        config["mid_block_type"] = ["UNetMidBlock3DCrossAttn"]
+        config["mid_block_type"] = "UNetMidBlock3DCrossAttn"
         from diffusers.utils import WEIGHTS_NAME
         model = cls.from_config(config, **unet_additional_kwargs)
 
