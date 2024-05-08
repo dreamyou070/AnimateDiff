@@ -10,5 +10,5 @@ python scripts/animate.py \
  --inference-config configs/inference/inference-v1.yaml \
  --H 256 \
  --W 512 \
- --L 16 \
+ --L 30 \
  --without-xformers
