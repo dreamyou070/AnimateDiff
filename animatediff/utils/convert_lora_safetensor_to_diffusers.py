@@ -117,8 +117,6 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
 
     # load LoRA weight from .safetensors
     state_dict = load_file(checkpoint_path)
-    for key in state_dict :
-        print(f'civitai key = {key}')
 
     visited = []
     # directly update weight in diffusers model
@@ -169,6 +167,8 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
         if len(state_dict[pair_keys[0]].shape) == 4:
             weight_up = state_dict[pair_keys[0]].squeeze(3).squeeze(2).to(torch.float32)
             weight_down = state_dict[pair_keys[1]].squeeze(3).squeeze(2).to(torch.float32)
+            print(f'weight_up   = {weight_up.shape}')
+            print(f'weight_down = {weight_down.shape}')
             curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down).unsqueeze(2).unsqueeze(3)
         else:
             weight_up = state_dict[pair_keys[0]].to(torch.float32)
