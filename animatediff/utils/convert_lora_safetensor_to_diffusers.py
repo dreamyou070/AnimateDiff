@@ -112,14 +112,16 @@ def convert_lora(pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX
     return pipeline
 
 def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT_ENCODER, alpha):
-    # load base model
+
+    # [1] load base model
     pipeline = StableDiffusionPipeline.from_pretrained(base_model_path, torch_dtype=torch.float32)
 
-    # load LoRA weight from .safetensors
+    # [2] load LoRA weight from .safetensors
     state_dict = load_file(checkpoint_path)
 
+    # [3] layer-by-layer update
     visited = []
-    # directly update weight in diffusers model
+
     for key in state_dict:
         # key = cond_stage_model.transformer.text_model.encoder.layers.1.mlp.fc2.weight
         # it is suggested to print out the key, it usually will be something like below
@@ -128,7 +130,6 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
         # as we have set the alpha beforehand, so just skip
         if ".alpha" in key or key in visited:
             continue
-
         if "text" in key:
             # there is no lora_te ...
             layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_")
@@ -136,10 +137,10 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
         else:
             layer_infos = key.split(".")[0].split(LORA_PREFIX_UNET + "_")[-1].split("_")
             curr_layer = pipeline.unet
-        # find the target layer
-        temp_name = layer_infos.pop(0)
 
         # ------------------------------------------------------------------------------------------------------------------------
+        # [4] make full temp_name
+        temp_name = layer_infos.pop(0)
         while len(layer_infos) > -1:
             try:
                 curr_layer = curr_layer.__getattr__(temp_name)
@@ -152,17 +153,20 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
                     temp_name += "_" + layer_infos.pop(0)
                 else:
                     temp_name = layer_infos.pop(0)
+        print(f'temp name (made name) = {temp_name} | curr_layer = {curr_layer}')
 
         # ------------------------------------------------------------------------------------------------------------------------
+        # [5] get lora weight
         pair_keys = []
         if "lora_down" in key:
-            # wouldn't it be repeating .. ?
+            # [lora down, lora_up]
             pair_keys.append(key.replace("lora_down", "lora_up"))
             pair_keys.append(key)
         else:
             pair_keys.append(key)
             pair_keys.append(key.replace("lora_up", "lora_down"))
-        # update weight
+
+        # what is curr_layer ???
         if len(state_dict[pair_keys[0]].shape) == 4:
             # 3X3 conv
             weight_up = state_dict[pair_keys[0]]
@@ -179,12 +183,14 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
             weight_up = state_dict[pair_keys[0]].to(torch.float32)
             weight_down = state_dict[pair_keys[1]].to(torch.float32)
             curr_layer.weight.data += alpha * torch.mm(weight_up, weight_down)
+
         # update visited list
         for item in pair_keys:
             visited.append(item)
+
     return pipeline
 
-
+"""
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -213,4 +219,4 @@ if __name__ == "__main__":
     pipe = convert(base_model_path, checkpoint_path, lora_prefix_unet, lora_prefix_text_encoder, alpha)
     pipe = pipe.to(args.device)
     pipe.save_pretrained(args.dump_path, safe_serialization=args.to_safetensors)
-
+"""
