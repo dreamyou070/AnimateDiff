@@ -57,8 +57,6 @@ def main(args):
     for model_idx, model_config in enumerate(config):
         # model config = v3-1-T2V.yaml
         print(f' (5.{model_idx}) model inference')
-        # if there is no config, use argument
-        # model_config.get "W" =
         print(f'model_config = {model_config}')
         model_config.W = model_config.get("W", args.W)
         model_config.H = model_config.get("H", args.H)
@@ -94,6 +92,8 @@ def main(args):
             controlnet = SparseControlNetModel.from_unet(unet,
                                                          controlnet_additional_kwargs=controlnet_config.get("controlnet_additional_kwargs", {}))
             print(f"loading controlnet checkpoint from {model_config.controlnet_path} ...")
+
+            # what is controlnet path ???
             controlnet_state_dict = torch.load(model_config.controlnet_path, map_location="cpu")
             controlnet_state_dict = controlnet_state_dict["controlnet"] if "controlnet" in controlnet_state_dict else controlnet_state_dict
             controlnet_state_dict.pop("animatediff_config", "")
