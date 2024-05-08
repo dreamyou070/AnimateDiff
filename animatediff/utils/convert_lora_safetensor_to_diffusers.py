@@ -58,24 +58,30 @@ def convert_lora(pipeline, state_dict, LORA_PREFIX_UNET="lora_unet", LORA_PREFIX
 
     # state_dict = my lora state_dict
     for key in state_dict:
+        print(f' ** key = {key}')
+    for key in state_dict:
+
         print(f' from toonyou model, key = {key}')
         # it is suggested to print out the key, it usually will be something like below
         # "lora_te_text_model_encoder_layers_0_self_attn_k_proj.lora_down.weight"
-
         # as we have set the alpha beforehand, so just skip
         if ".alpha" in key or key in visited:
             continue
 
-        if "text" in key:
-            layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_")
+        if "text" in key: # text model
+            # cond_stage_model
+            # transformer.text_model.embeddings.position_embedding.weight
+            layer_infos = key.split(".")[0].split(LORA_PREFIX_TEXT_ENCODER + "_")[-1].split("_") # model
             curr_layer = pipeline.text_encoder
+            print(f'get layer_infos = {layer_infos}')
 
         else:
             layer_infos = key.split(".")[0].split(LORA_PREFIX_UNET + "_")[-1].split("_")
             curr_layer = pipeline.unet
 
         # find the target layer
-        temp_name = layer_infos.pop(0)
+        temp_name = layer_infos.pop(0) # cond ?
+
         while len(layer_infos) > -1:
             try:
                 curr_layer = curr_layer.__getattr__(temp_name)
