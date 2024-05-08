@@ -5,9 +5,9 @@
 
 number_of_frame=16
 Frames_per_second=8
-
+pretrained-model-path="/share0/dreamyou070/dreamyou070/pretrained_stable_diffusion/stable-diffusion-v1-5"
 python animate.py \
- --pretrained-model-path ../../pretrained/stable-diffusion-v1-5 \
+ --pretrained-model-path ${pretrained-model-path} \
  --config configs/prompts/v4/v4-1-mistoon.yaml \
  --inference-config configs/inference/inference-v1.yaml \
  --H 256 \
