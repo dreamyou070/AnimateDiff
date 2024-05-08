@@ -36,15 +36,19 @@ def main(args) :
 
     print(f'\n step 2. make pipeline as convert model name')
     from animatediff.utils.convert_lora_safetensor_to_diffusers import convert
-    pipeline = StableDiffusionPipeline.from_pretrained(base_model_path, torch_dtype=torch.float32)
-    pipe = convert(base_model_path,
-                   checkpoint_path,
-                   lora_prefix_unet,
-                        lora_prefix_text_encoder,
-                        alpha)
-    pipe = pipe.to(args.device)
+    try :
+        pipeline = StableDiffusionPipeline.from_pretrained(base_model_path,
+                                                           torch_dtype=torch.float32)
+        pipe = convert(base_model_path,
+                       checkpoint_path,
+                       lora_prefix_unet,
+                            lora_prefix_text_encoder,
+                            alpha)
+        pipe = pipe.to(args.device)
+    except :
+        pipe = StableDiffusionPipeline.from_pretrained(checkpoint_path,
+                                                       torch_dtype=torch.float32)
 
-    dump_path = args.dump_path
     pipe.save_pretrained(args.dump_path, safe_serialization=args.to_safetensors)
 
 # lora inserting

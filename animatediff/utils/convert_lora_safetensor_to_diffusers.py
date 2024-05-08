@@ -122,6 +122,9 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
 
     # directly update weight in diffusers model
     for key in state_dict:
+
+        # key = cond_stage_model.transformer.text_model.encoder.layers.1.mlp.fc2.weight
+
         # it is suggested to print out the key, it usually will be something like below
         # "lora_te_text_model_encoder_layers_0_self_attn_k_proj.lora_down.weight"
 
@@ -138,6 +141,7 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
 
         # find the target layer
         temp_name = layer_infos.pop(0)
+        # ------------------------------------------------------------------------------------------------------------------------
         while len(layer_infos) > -1:
             try:
                 curr_layer = curr_layer.__getattr__(temp_name)
@@ -150,7 +154,7 @@ def convert(base_model_path, checkpoint_path, LORA_PREFIX_UNET, LORA_PREFIX_TEXT
                     temp_name += "_" + layer_infos.pop(0)
                 else:
                     temp_name = layer_infos.pop(0)
-
+        # ------------------------------------------------------------------------------------------------------------------------
         pair_keys = []
         if "lora_down" in key:
             pair_keys.append(key.replace("lora_down", "lora_up"))
