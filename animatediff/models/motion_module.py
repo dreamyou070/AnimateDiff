@@ -26,15 +26,15 @@ from einops import rearrange
 import torch.nn as disable_weight_init
 from ldm.modules.attention import FeedForward
 
-
+"""
 class MotionModuleType(Enum):
+    
     AnimateDiffV1 = "AnimateDiff V1, Yuwei Guo, Shanghai AI Lab"
     AnimateDiffV2 = "AnimateDiff V2, Yuwei Guo, Shanghai AI Lab"
     AnimateDiffV3 = "AnimateDiff V3, Yuwei Guo, Shanghai AI Lab"
     AnimateDiffXL = "AnimateDiff SDXL, Yuwei Guo, Shanghai AI Lab"
     SparseCtrl = "SparseCtrl, Yuwei Guo, Shanghai AI Lab"
     HotShotXL = "HotShot-XL, John Mullan, Natural Synthetics Inc"
-
 
     @staticmethod
     def get_mm_type(state_dict: dict[str, torch.Tensor]):
@@ -51,7 +51,6 @@ class MotionModuleType(Enum):
                 return MotionModuleType.AnimateDiffXL
             else:
                 return MotionModuleType.HotShotXL
-
 
 def zero_module(module):
     # Zero out the parameters of a module and return it.
@@ -101,7 +100,7 @@ class MotionWrapper(nn.Module):
     @property
     def is_v2(self):
         return self.mm_type == MotionModuleType.AnimateDiffV2
-
+"""
 
 class MotionModule(nn.Module):
     def __init__(self, in_channels, num_mm, max_len, attention_block_types=("Temporal_Self", "Temporal_Self"), operations = disable_weight_init):
